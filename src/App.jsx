@@ -1,6 +1,7 @@
 import MiniFramework from "../Modules/MiniFramework";
 import ImageComp from "./image";
 import State2 from "./State2";
+import State1 from "./State1";
 
 export default class App extends MiniFramework.Component {
 	constructor(props) {
@@ -16,7 +17,7 @@ export default class App extends MiniFramework.Component {
 				<div id="container">
 					<ImageComp />
 					<hr></hr>
-					<State2 />
+					<State1 />
 				</div>
 				<footer></footer>
 			</div>

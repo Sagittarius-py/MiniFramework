@@ -1,7 +1,18 @@
 const MiniFramework = {
+	currentComponent: null,
+	stateIndex: 0,
+	stateMap: new WeakMap(),
+
 	createElement: (tag, props, ...children) => {
 		if (typeof tag === "function" && !tag.isReactComponent) {
-			return tag(props);
+			const component = () => {
+				const element = tag(props);
+				element.props.id = tag.name;
+				MiniFramework.currentComponent = element;
+				stateIndex = 0;
+				return element;
+			};
+			return component();
 		}
 
 		if (tag.prototype && tag.isReactComponent) {
@@ -36,8 +47,6 @@ const MiniFramework = {
 				const componentElement = componentInstance.mount();
 				this.render(componentElement, container, replace);
 			} else {
-				this.currentComponent = frameworkEl.tag;
-				this.stateIndex = 0;
 				const componentElement = frameworkEl.tag(frameworkEl.props);
 				this.render(componentElement, container, replace);
 			}
@@ -70,73 +79,47 @@ const MiniFramework = {
 		}
 		container.appendChild(actualDOMElement);
 	},
-	useState: function (initialState, component) {
-		// Create a proxy handler to intercept state changes
+
+	useState: function (initialState) {
+		const component = MiniFramework.currentComponent;
+		if (!component) {
+			throw new Error("useState must be called within a component");
+		}
+
+		const stateIndex = MiniFramework.stateIndex++;
+		let componentState = MiniFramework.stateMap.get(component) || [];
+
 		const handler = {
 			set(target, key, value) {
 				target[key] = value;
 				MiniFramework.update(component);
-				return true; // Indicate success
+				return true;
 			},
 		};
 
-		// Create a proxy object
 		const state = new Proxy(initialState, handler);
+		componentState[stateIndex] = state;
 
-		// Get state function
-		const getState = () => state;
-
-		// Set state function
 		const setState = (newState) => {
+			const currentState = componentState[stateIndex];
 			if (typeof newState === "function") {
-				// For functional updates
-				Object.assign(state, newState(state));
+				Object.assign(currentState, new Proxy(newState(currentState), handler));
 			} else {
-				// For direct updates
-				Object.assign(state, newState);
+				Object.assign(currentState, newState);
 			}
+			MiniFramework.update(component);
 		};
 
-		return [getState, setState];
-	},
+		this.stateMap.set(component, componentState);
 
+		return [componentState[stateIndex], setState];
+	},
 	update: function (component) {
-		console.log(component);
-		const container = document.getElementById(component.constructor.name);
+		const container = document.getElementById(component.props.id);
+		console.log(component, "container");
 		if (container) {
-			this.render(component.mount(), container, true);
+			this.render(component, container, true);
 		}
-	},
-
-	getApi: async function (url, method = "GET") {
-		try {
-			const response = await fetch(url, { method });
-			if (!response.ok) {
-				throw new Error("Failed to fetch data");
-			}
-			const data = await response.json();
-			return data;
-		} catch (error) {
-			console.error("Error fetching data:", error.message);
-		}
-	},
-
-	replaceValues: function (jsxCode, array) {
-		if (typeof jsxCode !== "string") {
-			throw new Error("Invalid JSX code provided.");
-		}
-
-		const placeholderRegex = /{{(\d+)}}/g;
-
-		const replacedCode = jsxCode.replace(placeholderRegex, (match, index) => {
-			const replacementIndex = parseInt(index, 10);
-			if (replacementIndex >= 0 && replacementIndex < array.length) {
-				return array[replacementIndex];
-			}
-			return match;
-		});
-
-		return replacedCode;
 	},
 };
 
@@ -151,10 +134,8 @@ class MiniComponent {
 
 	willInit() {}
 
-	// Method called when the component is mounted to the DOM
 	didInit() {}
 
-	// Method called before the component is updated
 	didUpdate() {}
 
 	mainDiv() {
@@ -167,12 +148,10 @@ class MiniComponent {
 		MiniFramework.update(this);
 	}
 
-	// Method that subclasses should implement
 	mount() {
 		throw new Error("Component subclass must implement mount method.");
 	}
 
-	// Required to identify class components
 	static isReactComponent = true;
 }
 
