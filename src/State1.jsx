@@ -11,6 +11,9 @@ const State2 = (props) => {
 		<div>
 			<p>Count: {state.count}</p>
 			<button onClick={() => increment()}>Increment</button>
+			<p style="color: white">
+				Zmiana stanu i dynamiczne renderowanie w komponentach funkcyjnych
+			</p>
 		</div>
 	);
 };

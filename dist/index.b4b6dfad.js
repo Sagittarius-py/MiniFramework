@@ -605,6 +605,10 @@ var _state2 = require("./State2");
 var _state2Default = parcelHelpers.interopDefault(_state2);
 var _state1 = require("./State1");
 var _state1Default = parcelHelpers.interopDefault(_state1);
+var _mapComp = require("./MapComp");
+var _mapCompDefault = parcelHelpers.interopDefault(_mapComp);
+var _effect = require("./Effect");
+var _effectDefault = parcelHelpers.interopDefault(_effect);
 class App extends (0, _miniFrameworkDefault.default).Component {
     constructor(props){
         super(props);
@@ -614,12 +618,199 @@ class App extends (0, _miniFrameworkDefault.default).Component {
             style: ""
         }, "Welcome in Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
             id: "container"
-        }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null));
+        }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null));
     }
 }
 exports.default = App;
 
-},{"./image":"4f6qt","./State2":"kD4lj","./State1":"2Eq2J","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../Modules/MiniFramework":"j4fYt"}],"4f6qt":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State2":"kD4lj","./State1":"2Eq2J","./MapComp":"9GO05","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./Effect":"eRHMj"}],"j4fYt":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+const MiniFramework = {
+    currentComponent: null,
+    stateIndex: 0,
+    effectIndex: 0,
+    stateMap: new WeakMap(),
+    effectMap: new WeakMap(),
+    componentMap: new WeakMap(),
+    createElement: (tag, props, ...children)=>{
+        if (typeof tag === "function" && !tag.isReactComponent) return {
+            tag,
+            props: {
+                ...props,
+                children
+            }
+        };
+        if (tag.prototype && tag.isReactComponent) {
+            const componentInstance = new tag(props);
+            componentInstance.willInit();
+            const componentElement = componentInstance.mount();
+            componentInstance.didInit();
+            return componentElement;
+        }
+        return {
+            tag,
+            props: {
+                ...props,
+                children
+            }
+        };
+    },
+    render: function(frameworkEl, container, replace = false) {
+        // Handle arrays of elements
+        if (Array.isArray(frameworkEl)) {
+            if (replace) container.innerHTML = "";
+            frameworkEl.forEach((element)=>{
+                this.render(element, container, false);
+            });
+            return;
+        }
+        // Handle string or number types
+        if (typeof frameworkEl === "string" || typeof frameworkEl === "number") {
+            if (replace) container.innerHTML = "";
+            container.appendChild(document.createTextNode(frameworkEl));
+            return;
+        }
+        // Handle functional components
+        if (typeof frameworkEl.tag === "function") {
+            this.currentComponent = frameworkEl;
+            this.stateIndex = 0;
+            this.effectIndex = 0;
+            const componentElement = frameworkEl.tag(frameworkEl.props);
+            this.currentComponent = null;
+            const domNode = this.render(componentElement, container, replace);
+            this.componentMap.set(frameworkEl, domNode);
+            return domNode;
+        }
+        // Create the actual DOM element for standard elements
+        const actualDOMElement = document.createElement(frameworkEl.tag);
+        // Apply props to the created element, excluding children
+        Object.keys(frameworkEl?.props || {}).filter((key)=>key !== "children").forEach((property)=>{
+            if (property.startsWith("on")) actualDOMElement.addEventListener(property.substring(2).toLowerCase(), frameworkEl.props[property]);
+            else if (property === "className") actualDOMElement.className = frameworkEl.props[property];
+            else actualDOMElement[property] = frameworkEl.props[property];
+        });
+        // Recursively render children
+        frameworkEl?.props?.children?.forEach((child)=>{
+            this.render(child, actualDOMElement);
+        });
+        // Replace content in the container if required
+        if (replace) container.innerHTML = "";
+        container.appendChild(actualDOMElement);
+        // Run effects after rendering
+        this.runEffects(frameworkEl);
+        return actualDOMElement;
+    },
+    useState: function(initialState) {
+        const component = this.currentComponent;
+        if (!component) throw new Error("useState must be called within a component");
+        const stateIndex = this.stateIndex++;
+        let componentState = this.stateMap.get(component) || [];
+        if (!componentState[stateIndex]) componentState[stateIndex] = initialState;
+        const setState = (newState)=>{
+            const currentState = componentState[stateIndex];
+            const updatedState = typeof newState === "function" ? newState(currentState) : newState;
+            if (updatedState !== currentState) {
+                componentState[stateIndex] = updatedState;
+                MiniFramework.update(component);
+            }
+        };
+        this.stateMap.set(component, componentState);
+        return [
+            componentState[stateIndex],
+            setState
+        ];
+    },
+    useEffect: function(effect, deps) {
+        const component = this.currentComponent;
+        if (!component) throw new Error("useEffect must be called within a component");
+        const effectIndex = this.effectIndex++;
+        let componentEffects = this.effectMap.get(component) || [];
+        const prevEffect = componentEffects[effectIndex];
+        const hasChanged = !prevEffect || !deps || deps.some((dep, i)=>dep !== prevEffect.deps[i]);
+        if (hasChanged) {
+            if (prevEffect && prevEffect.cleanup) prevEffect.cleanup();
+            const cleanup = effect();
+            componentEffects[effectIndex] = {
+                deps,
+                cleanup
+            };
+        }
+        this.effectMap.set(component, componentEffects);
+    },
+    runEffects: function(component) {
+        const componentEffects = this.effectMap.get(component) || [];
+        componentEffects.forEach((effect)=>{
+            if (effect.cleanup) effect.cleanup();
+            effect.cleanup = effect.effect();
+        });
+    },
+    update: function(component) {
+        const domNode = this.componentMap.get(component);
+        if (domNode) this.render(component, domNode, true);
+    }
+};
+class MiniComponent {
+    constructor(props){
+        this.props = props;
+        this.state = {};
+        this.willInit();
+        this.mount();
+        this.didInit();
+    }
+    willInit() {}
+    didInit() {}
+    didUpdate() {}
+    mainDiv() {
+        this.name = this.constructor.name;
+        return `${this.constructor.name}`;
+    }
+    setState(partialState) {
+        this.state = {
+            ...this.state,
+            ...partialState
+        };
+        MiniFramework.update(this);
+    }
+    mount() {
+        throw new Error("Component subclass must implement mount method.");
+    }
+    static isReactComponent = true;
+}
+MiniFramework.Component = MiniComponent;
+exports.default = MiniFramework;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"4f6qt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");
@@ -639,7 +830,7 @@ const ImageComp = ()=>{
 };
 exports.default = ImageComp;
 
-},{"./1.jpg":"4ibEP","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../Modules/MiniFramework":"j4fYt"}],"4ibEP":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./1.jpg":"4ibEP","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4ibEP":[function(require,module,exports) {
 module.exports = require("bcfd47919a7e1b9").getBundleURL("byUka") + "1.e6545fd6.jpg" + "?" + Date.now();
 
 },{"bcfd47919a7e1b9":"lgJ39"}],"lgJ39":[function(require,module,exports) {
@@ -677,205 +868,34 @@ exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
 exports.getOrigin = getOrigin;
 
-},{}],"gkKU3":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"j4fYt":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-const MiniFramework = {
-    currentComponent: null,
-    stateIndex: 0,
-    stateMap: new WeakMap(),
-    createElement: (tag, props, ...children)=>{
-        if (typeof tag === "function" && !tag.isReactComponent) {
-            const component = ()=>{
-                const element = tag(props);
-                element.props.id = tag.name;
-                MiniFramework.currentComponent = element;
-                stateIndex = 0;
-                return element;
-            };
-            return component();
-        }
-        if (tag.prototype && tag.isReactComponent) {
-            const componentInstance = new tag(props);
-            componentInstance.willInit();
-            const componentElement = componentInstance.mount();
-            return componentElement;
-        }
-        return {
-            tag,
-            props: {
-                ...props,
-                children
-            }
-        };
-    },
-    render: function(frameworkEl, container, replace = false) {
-        if (typeof frameworkEl === "string" || typeof frameworkEl === "number") {
-            if (replace) container.innerHTML = "";
-            container.appendChild(document.createTextNode(frameworkEl));
-            return;
-        }
-        if (typeof frameworkEl.tag === "function") {
-            const isClassComponent = frameworkEl.tag.prototype && frameworkEl.tag.prototype.isReactComponent;
-            if (isClassComponent) {
-                const componentInstance = new frameworkEl.tag(frameworkEl.props);
-                componentInstance.willInit();
-                const componentElement = componentInstance.mount();
-                this.render(componentElement, container, replace);
-            } else {
-                const componentElement = frameworkEl.tag(frameworkEl.props);
-                this.render(componentElement, container, replace);
-            }
-            return;
-        }
-        const actualDOMElement = document.createElement(frameworkEl.tag);
-        Object.keys(frameworkEl?.props || {}).filter((key)=>key !== "children").forEach((property)=>{
-            if (property.startsWith("on")) actualDOMElement.addEventListener(property.substring(2).toLowerCase(), frameworkEl.props[property]);
-            else if (property === "className") actualDOMElement.className = frameworkEl.props[property];
-            else actualDOMElement[property] = frameworkEl.props[property];
-        });
-        frameworkEl?.props?.children?.forEach((child)=>{
-            this.render(child, actualDOMElement);
-        });
-        if (replace) container.innerHTML = "";
-        container.appendChild(actualDOMElement);
-    },
-    useState: function(initialState) {
-        const component = MiniFramework.currentComponent;
-        if (!component) throw new Error("useState must be called within a component");
-        const stateIndex1 = MiniFramework.stateIndex++;
-        let componentState = MiniFramework.stateMap.get(component) || [];
-        const handler = {
-            set (target, key, value) {
-                target[key] = value;
-                MiniFramework.update(component);
-                return true;
-            }
-        };
-        const state = new Proxy(initialState, handler);
-        componentState[stateIndex1] = state;
-        const setState = (newState)=>{
-            const currentState = componentState[stateIndex1];
-            if (typeof newState === "function") Object.assign(currentState, new Proxy(newState(currentState), handler));
-            else Object.assign(currentState, newState);
-            MiniFramework.update(component);
-        };
-        this.stateMap.set(component, componentState);
-        return [
-            componentState[stateIndex1],
-            setState
-        ];
-    },
-    update: function(component) {
-        const container = document.getElementById(component.props.id);
-        console.log(component, "container");
-        if (container) this.render(component, container, true);
-    }
-};
-class MiniComponent {
-    constructor(props){
-        this.props = props;
-        this.state = {};
-        this.willInit();
-        this.mount();
-        this.didInit();
-    }
-    willInit() {}
-    didInit() {}
-    didUpdate() {}
-    mainDiv() {
-        this.name = this.constructor.name;
-        return `${this.constructor.name}`;
-    }
-    setState(partialState) {
-        this.state = {
-            ...this.state,
-            ...partialState
-        };
-        MiniFramework.update(this);
-    }
-    mount() {
-        throw new Error("Component subclass must implement mount method.");
-    }
-    static isReactComponent = true;
-}
-MiniFramework.Component = MiniComponent;
-exports.default = MiniFramework;
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"kD4lj":[function(require,module,exports) {
+},{}],"kD4lj":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 class State2 extends (0, _miniFrameworkDefault.default).Component {
     constructor(props){
-        super();
-        this.props = props;
-    }
-    willInit() {
-        const [getCount, setCount] = (0, _miniFrameworkDefault.default).useState({
-            count: 1
-        }, this);
-        this.getCount = getCount;
-        this.setCount = setCount;
-        this.increment = this.increment.bind(this);
-        this.decrement = this.decrement.bind(this);
-    }
-    increment() {
-        const currentState = this.getCount();
-        this.setCount({
-            count: currentState.count + 1
+        super(props);
+        const [state, setState] = (0, _miniFrameworkDefault.default).classState({
+            count: 0
         });
+        this.state = state;
+        this.setState = setState;
     }
-    decrement() {
-        const currentState = this.getCount();
-        this.setCount({
-            count: currentState.count - 1
-        });
-    }
+    increment = ()=>{
+        this.setState((prevState)=>({
+                count: prevState.count + 1
+            }));
+    };
     mount() {
-        return (0, _miniFrameworkDefault.default).createElement("div", {
-            id: this.constructor.name
-        }, (0, _miniFrameworkDefault.default).createElement("button", {
+        return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", this.state.count), (0, _miniFrameworkDefault.default).createElement("button", {
             onClick: this.increment
-        }, "Increase"), (0, _miniFrameworkDefault.default).createElement("button", {
-            onClick: this.decrement
-        }, "Decrease"), (0, _miniFrameworkDefault.default).createElement("h1", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Count: ", this.getCount().count)));
+        }, "Increment"));
     }
 }
 exports.default = State2;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../Modules/MiniFramework":"j4fYt"}],"2Eq2J":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2Eq2J":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");
@@ -892,10 +912,65 @@ const State2 = (props)=>{
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", state.count), (0, _miniFrameworkDefault.default).createElement("button", {
         onClick: ()=>increment()
-    }, "Increment"));
+    }, "Increment"), (0, _miniFrameworkDefault.default).createElement("p", {
+        style: "color: white"
+    }, "Zmiana stanu i dynamiczne renderowanie w komponentach funkcyjnych"));
 };
 exports.default = State2;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../Modules/MiniFramework":"j4fYt"}],"bhJkM":[function() {},{}]},["gjUm6","d8Dch"], "d8Dch", "parcelRequire94c2")
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9GO05":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _miniFramework = require("../Modules/MiniFramework");
+var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
+const MapComp = ()=>{
+    const exampleStrings = [
+        "Hello, world!",
+        "JavaScript is awesome.",
+        "Let's learn to code.",
+        "Arrays can hold multiple values.",
+        "This is a string example.",
+        "Have a great day!",
+        "Coding is fun!",
+        "Happy coding!",
+        "OpenAI creates amazing tools.",
+        "ChatGPT is here to help."
+    ];
+    let newList = exampleStrings.map((elem)=>{
+        return (0, _miniFrameworkDefault.default).createElement("p", {
+            style: "color: white"
+        }, elem);
+    });
+    return (0, _miniFrameworkDefault.default).createElement("div", null, newList);
+};
+exports.default = MapComp;
+
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eRHMj":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _miniFramework = require("../Modules/MiniFramework");
+var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
+const Effect = ()=>{
+    const [count, setCount] = (0, _miniFrameworkDefault.default).useState({
+        count: 0
+    });
+    (0, _miniFrameworkDefault.default).useEffect(()=>{
+        console.log("Component mounted or updated!");
+        // Cleanup logic when the component unmounts or before the next effect
+        return ()=>{
+            console.log("Cleanup on unmount or update");
+        };
+    }, [
+        count
+    ]);
+    return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", count.count), (0, _miniFrameworkDefault.default).createElement("button", {
+        onClick: ()=>setCount((prevState)=>({
+                    count: prevState.count + 1
+                }))
+    }, "Increment"));
+};
+exports.default = Effect;
+
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bhJkM":[function() {},{}]},["gjUm6","d8Dch"], "d8Dch", "parcelRequire94c2")
 
 //# sourceMappingURL=index.b4b6dfad.js.map

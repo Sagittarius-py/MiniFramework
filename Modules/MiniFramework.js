@@ -1,24 +1,21 @@
 const MiniFramework = {
 	currentComponent: null,
 	stateIndex: 0,
+	effectIndex: 0,
 	stateMap: new WeakMap(),
+	effectMap: new WeakMap(),
+	componentMap: new WeakMap(),
 
 	createElement: (tag, props, ...children) => {
 		if (typeof tag === "function" && !tag.isReactComponent) {
-			const component = () => {
-				const element = tag(props);
-				element.props.id = tag.name;
-				MiniFramework.currentComponent = element;
-				stateIndex = 0;
-				return element;
-			};
-			return component();
+			return { tag, props: { ...props, children } };
 		}
 
 		if (tag.prototype && tag.isReactComponent) {
 			const componentInstance = new tag(props);
 			componentInstance.willInit();
 			const componentElement = componentInstance.mount();
+			componentInstance.didInit();
 			return componentElement;
 		}
 
@@ -29,6 +26,18 @@ const MiniFramework = {
 	},
 
 	render: function (frameworkEl, container, replace = false) {
+		// Handle arrays of elements
+		if (Array.isArray(frameworkEl)) {
+			if (replace) {
+				container.innerHTML = "";
+			}
+			frameworkEl.forEach((element) => {
+				this.render(element, container, false);
+			});
+			return;
+		}
+
+		// Handle string or number types
 		if (typeof frameworkEl === "string" || typeof frameworkEl === "number") {
 			if (replace) {
 				container.innerHTML = "";
@@ -37,24 +46,23 @@ const MiniFramework = {
 			return;
 		}
 
+		// Handle functional components
 		if (typeof frameworkEl.tag === "function") {
-			const isClassComponent =
-				frameworkEl.tag.prototype && frameworkEl.tag.prototype.isReactComponent;
+			this.currentComponent = frameworkEl;
+			this.stateIndex = 0;
+			this.effectIndex = 0;
+			const componentElement = frameworkEl.tag(frameworkEl.props);
+			this.currentComponent = null;
 
-			if (isClassComponent) {
-				const componentInstance = new frameworkEl.tag(frameworkEl.props);
-				componentInstance.willInit();
-				const componentElement = componentInstance.mount();
-				this.render(componentElement, container, replace);
-			} else {
-				const componentElement = frameworkEl.tag(frameworkEl.props);
-				this.render(componentElement, container, replace);
-			}
-			return;
+			const domNode = this.render(componentElement, container, replace);
+			this.componentMap.set(frameworkEl, domNode);
+			return domNode;
 		}
 
+		// Create the actual DOM element for standard elements
 		const actualDOMElement = document.createElement(frameworkEl.tag);
 
+		// Apply props to the created element, excluding children
 		Object.keys(frameworkEl?.props || {})
 			.filter((key) => key !== "children")
 			.forEach((property) => {
@@ -70,55 +78,94 @@ const MiniFramework = {
 				}
 			});
 
+		// Recursively render children
 		frameworkEl?.props?.children?.forEach((child) => {
 			this.render(child, actualDOMElement);
 		});
 
+		// Replace content in the container if required
 		if (replace) {
 			container.innerHTML = "";
 		}
 		container.appendChild(actualDOMElement);
+
+		// Run effects after rendering
+		this.runEffects(frameworkEl);
+
+		return actualDOMElement;
 	},
 
 	useState: function (initialState) {
-		const component = MiniFramework.currentComponent;
+		const component = this.currentComponent;
+
 		if (!component) {
 			throw new Error("useState must be called within a component");
 		}
 
-		const stateIndex = MiniFramework.stateIndex++;
-		let componentState = MiniFramework.stateMap.get(component) || [];
+		const stateIndex = this.stateIndex++;
+		let componentState = this.stateMap.get(component) || [];
 
-		const handler = {
-			set(target, key, value) {
-				target[key] = value;
-				MiniFramework.update(component);
-				return true;
-			},
-		};
-
-		const state = new Proxy(initialState, handler);
-		componentState[stateIndex] = state;
+		if (!componentState[stateIndex]) {
+			componentState[stateIndex] = initialState;
+		}
 
 		const setState = (newState) => {
 			const currentState = componentState[stateIndex];
-			if (typeof newState === "function") {
-				Object.assign(currentState, new Proxy(newState(currentState), handler));
-			} else {
-				Object.assign(currentState, newState);
+			const updatedState =
+				typeof newState === "function" ? newState(currentState) : newState;
+
+			if (updatedState !== currentState) {
+				componentState[stateIndex] = updatedState;
+				MiniFramework.update(component);
 			}
-			MiniFramework.update(component);
 		};
 
 		this.stateMap.set(component, componentState);
 
 		return [componentState[stateIndex], setState];
 	},
+
+	useEffect: function (effect, deps) {
+		const component = this.currentComponent;
+
+		if (!component) {
+			throw new Error("useEffect must be called within a component");
+		}
+
+		const effectIndex = this.effectIndex++;
+		let componentEffects = this.effectMap.get(component) || [];
+
+		const prevEffect = componentEffects[effectIndex];
+
+		const hasChanged =
+			!prevEffect || !deps || deps.some((dep, i) => dep !== prevEffect.deps[i]);
+
+		if (hasChanged) {
+			if (prevEffect && prevEffect.cleanup) {
+				prevEffect.cleanup();
+			}
+
+			const cleanup = effect();
+			componentEffects[effectIndex] = { deps, cleanup };
+		}
+
+		this.effectMap.set(component, componentEffects);
+	},
+
+	runEffects: function (component) {
+		const componentEffects = this.effectMap.get(component) || [];
+		componentEffects.forEach((effect) => {
+			if (effect.cleanup) {
+				effect.cleanup();
+			}
+			effect.cleanup = effect.effect();
+		});
+	},
+
 	update: function (component) {
-		const container = document.getElementById(component.props.id);
-		console.log(component, "container");
-		if (container) {
-			this.render(component, container, true);
+		const domNode = this.componentMap.get(component);
+		if (domNode) {
+			this.render(component, domNode, true);
 		}
 	},
 };
