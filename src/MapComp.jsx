@@ -14,11 +14,14 @@ const MapComp = () => {
 		"ChatGPT is here to help.",
 	];
 
-	let newList = exampleStrings.map((elem) => {
-		return <p style="color: white">{elem}</p>;
-	});
-
-	return <div>{newList}</div>;
+	return (
+		<div>
+			{exampleStrings.map((elem) => {
+				return <p style="">{elem}</p>;
+			})}
+			<p style="color: white">Generowanie dynamicznych list znaczników</p>
+		</div>
+	);
 };
 
 export default MapComp;

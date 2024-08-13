@@ -22,6 +22,8 @@ const Effect = () => {
 			>
 				Increment
 			</button>
+
+			<p style="color: white">useEffect, metoda cyklu życia komponentu </p>
 		</div>
 	);
 };
