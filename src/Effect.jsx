@@ -3,6 +3,8 @@ import MiniFramework from "../Modules/MiniFramework";
 const Effect = () => {
 	const [count, setCount] = MiniFramework.useState({ count: 0 });
 
+	
+
 	MiniFramework.useEffect(() => {
 		console.log("Component mounted or updated!");
 

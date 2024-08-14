@@ -5,6 +5,7 @@ const MiniFramework = {
 	stateMap: new WeakMap(), // Mapa przechowująca stany komponentów
 	effectMap: new WeakMap(), // Mapa przechowująca efekty komponentów
 	componentMap: new WeakMap(), // Mapa przechowująca komponenty i ich odpowiadające im elementy DOM
+	contextMap: new WeakMap(), // Mapy WeakMap do przechowywania wartości kontekstów
 
 	// Funkcja do tworzenia elementu
 	createElement: (tag, props, ...children) => {
@@ -180,6 +181,37 @@ const MiniFramework = {
 		if (domNode) {
 			this.render(component, domNode, true); // Renderuje komponent ponownie, zastępując jego zawartość
 		}
+	},
+
+	createContext: function (defaultValue) {
+		const context = {
+			defaultValue,
+			state: defaultValue,
+			subscribers: new Set(),
+		};
+
+		function Provider({ value, children }) {
+			context.state = value !== undefined ? value : context.defaultValue;
+			context.subscribers.forEach((callback) => callback(context.state));
+			return children;
+		}
+
+		function useContext() {
+			const [value, setValue] = MiniFramework.useState(context.state);
+
+			MiniFramework.useEffect(() => {
+				const updateValue = (newValue) => setValue(newValue);
+				context.subscribers.add(updateValue);
+				return () => context.subscribers.delete(updateValue);
+			}, []);
+
+			return value;
+		}
+
+		return {
+			Provider,
+			useContext,
+		};
 	},
 };
 

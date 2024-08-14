@@ -1,33 +1,30 @@
 import MiniFramework from "../Modules/MiniFramework";
 import ImageComp from "./image";
-import State2 from "./State2";
+
 import State1 from "./State1";
 import MapComp from "./MapComp";
 import Effect from "./Effect";
+import { MyContext } from "./Context";
 
-export default class App extends MiniFramework.Component {
-	constructor(props) {
-		super(props);
-	}
-
-	mount() {
-		return (
+export default function App() {
+	return (
+		<MyContext.Provider>
 			<div>
 				<header>
-					<h1 style="">Welcome in Mini.js</h1>
+					<h1>Welcome to Mini.js</h1>
 				</header>
 				<div id="container">
 					<ImageComp />
-					<hr></hr>
+					<hr />
 					<State1 />
-					{/* <State2 /> */}
-					<hr></hr>
+					<hr />
 					<MapComp />
-					<hr></hr>
+					<hr />
 					<Effect />
+					<hr />
 				</div>
 				<footer></footer>
 			</div>
-		);
-	}
+		</MyContext.Provider>
+	);
 }

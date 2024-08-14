@@ -1,6 +1,6 @@
 import MiniFramework from "../Modules/MiniFramework";
 
-const State2 = (props) => {
+const State1 = (props) => {
 	const [state, setState] = MiniFramework.useState({ count: 0 });
 
 	const increment = () => {
@@ -18,4 +18,4 @@ const State2 = (props) => {
 	);
 };
 
-export default State2;
+export default State1;
