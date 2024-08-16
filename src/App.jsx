@@ -2,13 +2,15 @@ import MiniFramework from "../Modules/MiniFramework";
 import ImageComp from "./image";
 
 import State1 from "./State1";
+import State2 from "./State2";
 import MapComp from "./MapComp";
 import Effect from "./Effect";
+import StyledComp from "./StyledComp";
 import { MyContext } from "./Context";
 
 export default function App() {
 	return (
-		<MyContext.Provider>
+		<MyContext.Provider value={{ count: 0 }}>
 			<div>
 				<header>
 					<h1>Welcome to Mini.js</h1>
@@ -22,6 +24,9 @@ export default function App() {
 					<hr />
 					<Effect />
 					<hr />
+					<State2 />
+					<hr />
+					<StyledComp />
 				</div>
 				<footer></footer>
 			</div>

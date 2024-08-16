@@ -65,9 +65,19 @@ const MiniFramework = {
 			return domNode;
 		}
 
+		if (replace && container.firstChild) {
+			const oldComponent = this.componentMap.get(container.firstChild);
+			if (oldComponent) {
+				this.cleanupEffects(oldComponent); // Czyszczenie efektów, gdy komponent zostaje zastąpiony
+			}
+		}
+
 		// Tworzy rzeczywisty element DOM dla standardowych tagów
 		const actualDOMElement = document.createElement(frameworkEl.tag);
 
+		if (frameworkEl.props && frameworkEl.props.className) {
+			actualDOMElement.className = frameworkEl.props.className; // Zastosowanie klasy CSS
+		}
 		// Aplikuje atrybuty (props) do utworzonego elementu, z wyłączeniem dzieci
 		Object.keys(frameworkEl?.props || {})
 			.filter((key) => key !== "children")
@@ -137,31 +147,31 @@ const MiniFramework = {
 
 	// Hook useEffect
 	useEffect: function (effect, deps) {
-		const component = this.currentComponent; // Pobiera aktualny komponent
+		const component = this.currentComponent; // Pobieramy aktualny komponent
 
 		if (!component) {
-			throw new Error("useEffect must be called within a component"); // Błąd, jeśli useEffect jest używany poza komponentem
+			throw new Error("useEffect must be called within a component");
 		}
 
-		const effectIndex = this.effectIndex++; // Inkrementuje indeks efektu
-		let componentEffects = this.effectMap.get(component) || []; // Pobiera efekty komponentu
+		const effectIndex = this.effectIndex++; // Pobieramy bieżący indeks efektu
+		let componentEffects = this.effectMap.get(component) || [];
 
-		const prevEffect = componentEffects[effectIndex]; // Poprzedni efekt
+		const prevEffect = componentEffects[effectIndex];
 
-		// Sprawdza, czy zależności się zmieniły
+		// Sprawdzamy, czy zależności uległy zmianie
 		const hasChanged =
 			!prevEffect || !deps || deps.some((dep, i) => dep !== prevEffect.deps[i]);
 
 		if (hasChanged) {
 			if (prevEffect && prevEffect.cleanup) {
-				prevEffect.cleanup(); // Wywołuje funkcję czyszczącą poprzedniego efektu
+				prevEffect.cleanup(); // Czyszczenie poprzedniego efektu, jeśli istnieje
 			}
 
-			const cleanup = effect(); // Uruchamia nowy efekt
-			componentEffects[effectIndex] = { deps, cleanup }; // Zapisuje nowy efekt
+			const cleanup = effect(); // Wywołanie efektu i przechwycenie funkcji czyszczącej
+			componentEffects[effectIndex] = { deps, cleanup };
 		}
 
-		this.effectMap.set(component, componentEffects); // Aktualizuje mapę efektów
+		this.effectMap.set(component, componentEffects); // Zapis efektów w mapie
 	},
 
 	// Uruchamianie efektów po renderowaniu komponentu
@@ -175,43 +185,140 @@ const MiniFramework = {
 		});
 	},
 
-	// Aktualizacja komponentu
-	update: function (component) {
-		const domNode = this.componentMap.get(component); // Pobiera element DOM powiązany z komponentem
-		if (domNode) {
-			this.render(component, domNode, true); // Renderuje komponent ponownie, zastępując jego zawartość
-		}
+	// Obsługa przerywania efektów podczas odmontowywania komponentu
+	cleanupEffects: function (component) {
+		const componentEffects = this.effectMap.get(component) || [];
+		componentEffects.forEach((effect) => {
+			if (effect.cleanup) {
+				effect.cleanup(); // Wywołanie wszystkich funkcji czyszczących
+			}
+		});
+		this.effectMap.delete(component); // Usunięcie efektów z mapy po odmontowaniu
 	},
 
-	createContext: function (defaultValue) {
-		const context = {
-			defaultValue,
-			state: defaultValue,
-			subscribers: new Set(),
-		};
+	diff: function (oldNode, newNode) {
+		if (!oldNode || !newNode) return false; // Sprawdzenie, czy któryś z węzłów jest null
 
-		function Provider({ value, children }) {
-			context.state = value !== undefined ? value : context.defaultValue;
-			context.subscribers.forEach((callback) => callback(context.state));
-			return children;
+		if (typeof oldNode !== typeof newNode) return false;
+		if (typeof newNode === "string" || typeof newNode === "number") {
+			return oldNode === newNode;
+		}
+		if (oldNode.tag !== newNode.tag) {
+			return false;
 		}
 
+		const oldProps = oldNode.props || {};
+		const newProps = newNode.props || {};
+
+		const oldKeys = Object.keys(oldProps);
+		const newKeys = Object.keys(newProps);
+
+		if (oldKeys.length !== newKeys.length) {
+			return false;
+		}
+
+		for (let key of newKeys) {
+			if (key === "children") continue;
+			if (oldProps[key] !== newProps[key]) return false;
+		}
+
+		return true;
+	},
+
+	// Aktualizacja komponentu
+	update: function (component) {
+		const oldNode = this.componentMap.get(component);
+		this.currentComponent = component; // Ustawiamy `currentComponent`, żeby działały hooki
+		const newNode = component.tag(component.props); // Tworzymy nowy element komponentu
+
+		if (!this.diff(oldNode, newNode)) {
+			this.cleanupEffects(component); // Czyścimy efekty przed ponownym renderowaniem
+			const domNode = this.render(component, oldNode, true);
+			this.componentMap.set(component, domNode);
+		} else {
+			this.runEffects(component);
+		}
+		this.currentComponent = null; // Czyszczenie `currentComponent` po aktualizacji
+	},
+
+	// Funkcja do tworzenia kontekstu
+	createContext: function (defaultValue) {
+		const context = {
+			defaultValue, // Wartość domyślna kontekstu
+			state: defaultValue, // Bieżący stan kontekstu
+			subscribers: new Set(), // Zbiór subskrybentów aktualizacji kontekstu
+		};
+
+		// Funkcja do modyfikacji wartości kontekstu
+		function setContextValue(newValue) {
+			context.state = newValue; // Ustawia nową wartość stanu kontekstu
+			context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
+		}
+
+		// Komponent Provider umożliwiający aktualizację kontekstu
+		function Provider({ value, children }) {
+			if (value !== undefined) {
+				setContextValue(value); // Aktualizuje wartość kontekstu, jeśli została podana
+			}
+			return children; // Renderuje dzieci
+		}
+
+		// Hook useContext do uzyskiwania wartości kontekstu
 		function useContext() {
-			const [value, setValue] = MiniFramework.useState(context.state);
+			const [value, setValue] = MiniFramework.useState(context.state); // Uzyskuje aktualną wartość kontekstu
 
 			MiniFramework.useEffect(() => {
-				const updateValue = (newValue) => setValue(newValue);
-				context.subscribers.add(updateValue);
-				return () => context.subscribers.delete(updateValue);
+				const updateValue = (newValue) => setValue(newValue); // Funkcja aktualizująca stan z nową wartością kontekstu
+				context.subscribers.add(updateValue); // Dodaje funkcję aktualizującą do subskrybentów
+				return () => context.subscribers.delete(updateValue); // Usuwa funkcję z subskrybentów podczas odmontowania
 			}, []);
 
-			return value;
+			return value; // Zwraca wartość kontekstu
 		}
 
 		return {
-			Provider,
-			useContext,
+			Provider, // Komponent Provider
+			useContext, // Hook useContext
+			setContextValue, // Funkcja do zmiany wartości kontekstu
 		};
+	},
+	useStyle: function (styles) {
+		const component = this.currentComponent;
+		if (!component) {
+			throw new Error("useStyle must be called within a component");
+		}
+
+		const styleTagId = `style-${component.tag.name}`;
+		let styleTag = document.getElementById(styleTagId);
+
+		if (!styleTag) {
+			styleTag = document.createElement("style");
+			styleTag.id = styleTagId;
+			document.head.appendChild(styleTag);
+		}
+
+		const className = `class-${component.tag.name}-${Math.random()
+			.toString(36)
+			.substr(2, 5)}`;
+
+		// Konwersja stylów z camelCase na kebab-case
+		const css = `
+			.${className} {
+				${Object.entries(styles)
+					.map(([key, value]) => {
+						const kebabKey = key
+							.replace(/([a-z])([A-Z])/g, "$1-$2")
+							.toLowerCase();
+						return `${kebabKey}: ${value};`;
+					})
+					.join(" ")}
+			}
+		`;
+
+		// Dodawanie nowego CSS do istniejącego styleTag
+		styleTag.appendChild(document.createTextNode(css));
+
+		return className;
 	},
 };
 

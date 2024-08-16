@@ -603,18 +603,26 @@ var _image = require("./image");
 var _imageDefault = parcelHelpers.interopDefault(_image);
 var _state1 = require("./State1");
 var _state1Default = parcelHelpers.interopDefault(_state1);
+var _state2 = require("./State2");
+var _state2Default = parcelHelpers.interopDefault(_state2);
 var _mapComp = require("./MapComp");
 var _mapCompDefault = parcelHelpers.interopDefault(_mapComp);
 var _effect = require("./Effect");
 var _effectDefault = parcelHelpers.interopDefault(_effect);
+var _styledComp = require("./StyledComp");
+var _styledCompDefault = parcelHelpers.interopDefault(_styledComp);
 var _context = require("./Context");
 function App() {
-    return (0, _miniFrameworkDefault.default).createElement((0, _context.MyContext).Provider, null, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
+    return (0, _miniFrameworkDefault.default).createElement((0, _context.MyContext).Provider, {
+        value: {
+            count: 0
+        }
+    }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
         id: "container"
-    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
+    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
 }
 
-},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./MapComp":"9GO05","./Effect":"eRHMj","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./StyledComp":"jOIqo"}],"j4fYt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 const MiniFramework = {
@@ -686,8 +694,13 @@ const MiniFramework = {
             this.componentMap.set(frameworkEl, domNode); // Mapuje komponent na element DOM
             return domNode;
         }
+        if (replace && container.firstChild) {
+            const oldComponent = this.componentMap.get(container.firstChild);
+            if (oldComponent) this.cleanupEffects(oldComponent); // Czyszczenie efektów, gdy komponent zostaje zastąpiony
+        }
         // Tworzy rzeczywisty element DOM dla standardowych tagów
         const actualDOMElement = document.createElement(frameworkEl.tag);
+        if (frameworkEl.props && frameworkEl.props.className) actualDOMElement.className = frameworkEl.props.className; // Zastosowanie klasy CSS
         // Aplikuje atrybuty (props) do utworzonego elementu, z wyłączeniem dzieci
         Object.keys(frameworkEl?.props || {}).filter((key)=>key !== "children").forEach((property)=>{
             if (property.startsWith("on")) // Dodaje event listener, jeśli atrybut zaczyna się od "on"
@@ -731,22 +744,22 @@ const MiniFramework = {
     },
     // Hook useEffect
     useEffect: function(effect, deps) {
-        const component = this.currentComponent; // Pobiera aktualny komponent
-        if (!component) throw new Error("useEffect must be called within a component"); // Błąd, jeśli useEffect jest używany poza komponentem
-        const effectIndex = this.effectIndex++; // Inkrementuje indeks efektu
-        let componentEffects = this.effectMap.get(component) || []; // Pobiera efekty komponentu
-        const prevEffect = componentEffects[effectIndex]; // Poprzedni efekt
-        // Sprawdza, czy zależności się zmieniły
+        const component = this.currentComponent; // Pobieramy aktualny komponent
+        if (!component) throw new Error("useEffect must be called within a component");
+        const effectIndex = this.effectIndex++; // Pobieramy bieżący indeks efektu
+        let componentEffects = this.effectMap.get(component) || [];
+        const prevEffect = componentEffects[effectIndex];
+        // Sprawdzamy, czy zależności uległy zmianie
         const hasChanged = !prevEffect || !deps || deps.some((dep, i)=>dep !== prevEffect.deps[i]);
         if (hasChanged) {
-            if (prevEffect && prevEffect.cleanup) prevEffect.cleanup(); // Wywołuje funkcję czyszczącą poprzedniego efektu
-            const cleanup = effect(); // Uruchamia nowy efekt
+            if (prevEffect && prevEffect.cleanup) prevEffect.cleanup(); // Czyszczenie poprzedniego efektu, jeśli istnieje
+            const cleanup = effect(); // Wywołanie efektu i przechwycenie funkcji czyszczącej
             componentEffects[effectIndex] = {
                 deps,
                 cleanup
-            }; // Zapisuje nowy efekt
+            };
         }
-        this.effectMap.set(component, componentEffects); // Aktualizuje mapę efektów
+        this.effectMap.set(component, componentEffects); // Zapis efektów w mapie
     },
     // Uruchamianie efektów po renderowaniu komponentu
     runEffects: function(component) {
@@ -756,35 +769,102 @@ const MiniFramework = {
             effect.cleanup = effect.effect(); // Uruchamia efekt i zapisuje funkcję czyszczącą
         });
     },
+    // Obsługa przerywania efektów podczas odmontowywania komponentu
+    cleanupEffects: function(component) {
+        const componentEffects = this.effectMap.get(component) || [];
+        componentEffects.forEach((effect)=>{
+            if (effect.cleanup) effect.cleanup(); // Wywołanie wszystkich funkcji czyszczących
+        });
+        this.effectMap.delete(component); // Usunięcie efektów z mapy po odmontowaniu
+    },
+    diff: function(oldNode, newNode) {
+        if (!oldNode || !newNode) return false; // Sprawdzenie, czy któryś z węzłów jest null
+        if (typeof oldNode !== typeof newNode) return false;
+        if (typeof newNode === "string" || typeof newNode === "number") return oldNode === newNode;
+        if (oldNode.tag !== newNode.tag) return false;
+        const oldProps = oldNode.props || {};
+        const newProps = newNode.props || {};
+        const oldKeys = Object.keys(oldProps);
+        const newKeys = Object.keys(newProps);
+        if (oldKeys.length !== newKeys.length) return false;
+        for (let key of newKeys){
+            if (key === "children") continue;
+            if (oldProps[key] !== newProps[key]) return false;
+        }
+        return true;
+    },
     // Aktualizacja komponentu
     update: function(component) {
-        const domNode = this.componentMap.get(component); // Pobiera element DOM powiązany z komponentem
-        if (domNode) this.render(component, domNode, true); // Renderuje komponent ponownie, zastępując jego zawartość
+        const oldNode = this.componentMap.get(component);
+        this.currentComponent = component; // Ustawiamy `currentComponent`, żeby działały hooki
+        const newNode = component.tag(component.props); // Tworzymy nowy element komponentu
+        if (!this.diff(oldNode, newNode)) {
+            this.cleanupEffects(component); // Czyścimy efekty przed ponownym renderowaniem
+            const domNode = this.render(component, oldNode, true);
+            this.componentMap.set(component, domNode);
+        } else this.runEffects(component);
+        this.currentComponent = null; // Czyszczenie `currentComponent` po aktualizacji
     },
+    // Funkcja do tworzenia kontekstu
     createContext: function(defaultValue) {
         const context = {
             defaultValue,
+            // Wartość domyślna kontekstu
             state: defaultValue,
-            subscribers: new Set()
+            // Bieżący stan kontekstu
+            subscribers: new Set() // Zbiór subskrybentów aktualizacji kontekstu
         };
-        function Provider({ value, children }) {
-            context.state = value !== undefined ? value : context.defaultValue;
-            context.subscribers.forEach((callback)=>callback(context.state));
-            return children;
+        // Funkcja do modyfikacji wartości kontekstu
+        function setContextValue(newValue) {
+            context.state = newValue; // Ustawia nową wartość stanu kontekstu
+            context.subscribers.forEach((callback)=>callback(newValue)); // Powiadamia subskrybentów o zmianie
         }
+        // Komponent Provider umożliwiający aktualizację kontekstu
+        function Provider({ value, children }) {
+            if (value !== undefined) setContextValue(value); // Aktualizuje wartość kontekstu, jeśli została podana
+            return children; // Renderuje dzieci
+        }
+        // Hook useContext do uzyskiwania wartości kontekstu
         function useContext() {
-            const [value, setValue] = MiniFramework.useState(context.state);
+            const [value, setValue] = MiniFramework.useState(context.state); // Uzyskuje aktualną wartość kontekstu
             MiniFramework.useEffect(()=>{
-                const updateValue = (newValue)=>setValue(newValue);
-                context.subscribers.add(updateValue);
-                return ()=>context.subscribers.delete(updateValue);
+                const updateValue = (newValue)=>setValue(newValue); // Funkcja aktualizująca stan z nową wartością kontekstu
+                context.subscribers.add(updateValue); // Dodaje funkcję aktualizującą do subskrybentów
+                return ()=>context.subscribers.delete(updateValue); // Usuwa funkcję z subskrybentów podczas odmontowania
             }, []);
-            return value;
+            return value; // Zwraca wartość kontekstu
         }
         return {
             Provider,
-            useContext
+            // Komponent Provider
+            useContext,
+            // Hook useContext
+            setContextValue
         };
+    },
+    useStyle: function(styles) {
+        const component = this.currentComponent;
+        if (!component) throw new Error("useStyle must be called within a component");
+        const styleTagId = `style-${component.tag.name}`;
+        let styleTag = document.getElementById(styleTagId);
+        if (!styleTag) {
+            styleTag = document.createElement("style");
+            styleTag.id = styleTagId;
+            document.head.appendChild(styleTag);
+        }
+        const className = `class-${component.tag.name}-${Math.random().toString(36).substr(2, 5)}`;
+        // Konwersja stylów z camelCase na kebab-case
+        const css = `
+			.${className} {
+				${Object.entries(styles).map(([key, value])=>{
+            const kebabKey = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+            return `${kebabKey}: ${value};`;
+        }).join(" ")}
+			}
+		`;
+        // Dodawanie nowego CSS do istniejącego styleTag
+        styleTag.appendChild(document.createTextNode(css));
+        return className;
     }
 };
 // Klasa bazowa dla komponentów
@@ -859,7 +939,9 @@ var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _1Jpg = require("./1.jpg");
 var _1JpgDefault = parcelHelpers.interopDefault(_1Jpg);
+var _context = require("./Context");
 const ImageComp = ()=>{
+    const contextValue = (0, _context.MyContext).useContext();
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("img", {
         name: "image",
         id: "image",
@@ -868,11 +950,11 @@ const ImageComp = ()=>{
     }), (0, _miniFrameworkDefault.default).createElement("br", null), (0, _miniFrameworkDefault.default).createElement("label", {
         for: "image",
         style: "color: white"
-    }, "Importowane zdj\u0119cie w jsx"));
+    }, "Importowane zdj\u0119cie w jsx"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 contextu w innym componencie: ", contextValue.count));
 };
 exports.default = ImageComp;
 
-},{"../Modules/MiniFramework":"j4fYt","./1.jpg":"4ibEP","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4ibEP":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./1.jpg":"4ibEP","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4ibEP":[function(require,module,exports) {
 module.exports = require("bcfd47919a7e1b9").getBundleURL("byUka") + "1.e6545fd6.jpg" + "?" + Date.now();
 
 },{"bcfd47919a7e1b9":"lgJ39"}],"lgJ39":[function(require,module,exports) {
@@ -910,7 +992,15 @@ exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
 exports.getOrigin = getOrigin;
 
-},{}],"2Eq2J":[function(require,module,exports) {
+},{}],"knXGc":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MyContext", ()=>MyContext);
+var _miniFramework = require("../Modules/MiniFramework");
+var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
+const MyContext = (0, _miniFrameworkDefault.default).createContext("cok");
+
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2Eq2J":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");
@@ -920,20 +1010,56 @@ const State1 = (props)=>{
         count: 0
     });
     const increment = ()=>{
-        console.log(state);
         setState((prevState)=>({
                 count: prevState.count + 1
             }));
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", state.count), (0, _miniFrameworkDefault.default).createElement("button", {
-        onClick: ()=>increment()
+        onClick: ()=>{
+            increment();
+            console.log("cok");
+        }
     }, "Increment"), (0, _miniFrameworkDefault.default).createElement("p", {
         style: "color: white"
     }, "Zmiana stanu i dynamiczne renderowanie w komponentach funkcyjnych"));
 };
 exports.default = State1;
 
-},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9GO05":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"kD4lj":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _miniFramework = require("../Modules/MiniFramework");
+var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
+var _context = require("./Context");
+const State2 = ()=>{
+    const contextValue = (0, _context.MyContext).useContext();
+    const [state, setState] = (0, _miniFrameworkDefault.default).useState(contextValue);
+    const increment = ()=>{
+        setState((prevState)=>({
+                count: prevState.count + 1
+            }));
+    };
+    // Funkcja do aktualizacji wartości kontekstu
+    const updateContext = ()=>{
+        (0, _context.MyContext).setContextValue({
+            count: state.count + 1
+        });
+        console.log(contextValue);
+    };
+    return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", contextValue.count), (0, _miniFrameworkDefault.default).createElement("button", {
+        onClick: ()=>{
+            increment();
+            updateContext(); // Aktualizuj kontekst po inkrementacji
+        }
+    }, "Increment"), (0, _miniFrameworkDefault.default).createElement("p", {
+        style: {
+            color: "white"
+        }
+    }, "Contextowa zmiana stanu"));
+};
+exports.default = State2;
+
+},{"../Modules/MiniFramework":"j4fYt","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9GO05":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");
@@ -989,13 +1115,23 @@ const Effect = ()=>{
 };
 exports.default = Effect;
 
-},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"knXGc":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jOIqo":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "MyContext", ()=>MyContext);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
-const MyContext = (0, _miniFrameworkDefault.default).createContext("cok");
+const StyledComp = ()=>{
+    const className = (0, _miniFrameworkDefault.default).useStyle({
+        backgroundColor: "lightblue",
+        padding: "10px",
+        borderRadius: "5px",
+        border: "1px solid black"
+    });
+    return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("div", {
+        className: className
+    }, (0, _miniFrameworkDefault.default).createElement("p", null, "This component is styled using CSS-in-JS!")), (0, _miniFrameworkDefault.default).createElement("p", null, "Komponent stylowany za pomoc\u0105 JS-CSS"));
+};
+exports.default = StyledComp;
 
 },{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bhJkM":[function() {},{}]},["gjUm6","d8Dch"], "d8Dch", "parcelRequire94c2")
 
