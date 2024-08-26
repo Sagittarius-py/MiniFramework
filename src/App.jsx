@@ -7,6 +7,7 @@ import MapComp from "./MapComp";
 import Effect from "./Effect";
 import StyledComp from "./StyledComp";
 import { MyContext } from "./Context";
+import Modal from "./Modal";
 
 export default function App() {
 	return (
@@ -27,6 +28,8 @@ export default function App() {
 					<State2 />
 					<hr />
 					<StyledComp />
+					<hr />
+					<Modal />
 				</div>
 				<footer></footer>
 			</div>

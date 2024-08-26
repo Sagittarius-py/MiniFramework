@@ -612,6 +612,8 @@ var _effectDefault = parcelHelpers.interopDefault(_effect);
 var _styledComp = require("./StyledComp");
 var _styledCompDefault = parcelHelpers.interopDefault(_styledComp);
 var _context = require("./Context");
+var _modal = require("./Modal");
+var _modalDefault = parcelHelpers.interopDefault(_modal);
 function App() {
     return (0, _miniFrameworkDefault.default).createElement((0, _context.MyContext).Provider, {
         value: {
@@ -619,10 +621,10 @@ function App() {
         }
     }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
         id: "container"
-    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
+    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _modalDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
 }
 
-},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./StyledComp":"jOIqo"}],"j4fYt":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./Context":"knXGc","./Modal":"d8SYv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 const MiniFramework = {
@@ -667,8 +669,20 @@ const MiniFramework = {
             }
         };
     },
+    //! Skonczyć portale !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    createPortal: (frameworkEl)=>{
+        const container = document.getElementById("modal-root");
+        console.log(frameworkEl);
+        MiniFramework.render(frameworkEl, container, true);
+        return null;
+    },
     // Funkcja do renderowania elementu w kontenerze DOM
     render: function(frameworkEl, container, replace = false) {
+        if (frameworkEl && frameworkEl.props?.isPortal) {
+            console.log(typeof frameworkEl.tag);
+            this.createPortal(frameworkEl.content, frameworkEl.targetContainer);
+            return;
+        }
         // Obsługa tablicy elementów
         if (Array.isArray(frameworkEl)) {
             if (replace) container.innerHTML = ""; // Opróżnia kontener, jeśli replace jest true
@@ -684,7 +698,7 @@ const MiniFramework = {
             return;
         }
         // Obsługa komponentów funkcyjnych
-        if (typeof frameworkEl.tag === "function") {
+        if (frameworkEl && typeof frameworkEl.tag === "function") {
             this.currentComponent = frameworkEl; // Ustawia aktualny komponent
             this.stateIndex = 0; // Resetuje indeks stanu
             this.effectIndex = 0; // Resetuje indeks efektu
@@ -699,8 +713,8 @@ const MiniFramework = {
             if (oldComponent) this.cleanupEffects(oldComponent); // Czyszczenie efektów, gdy komponent zostaje zastąpiony
         }
         // Tworzy rzeczywisty element DOM dla standardowych tagów
-        const actualDOMElement = document.createElement(frameworkEl.tag);
-        if (frameworkEl.props && frameworkEl.props.className) actualDOMElement.className = frameworkEl.props.className; // Zastosowanie klasy CSS
+        const actualDOMElement = document.createElement(frameworkEl?.tag);
+        if (frameworkEl?.props && frameworkEl?.props.className) actualDOMElement.className = frameworkEl.props.className; // Zastosowanie klasy CSS
         // Aplikuje atrybuty (props) do utworzonego elementu, z wyłączeniem dzieci
         Object.keys(frameworkEl?.props || {}).filter((key)=>key !== "children").forEach((property)=>{
             if (property.startsWith("on")) // Dodaje event listener, jeśli atrybut zaczyna się od "on"
@@ -1132,6 +1146,27 @@ const StyledComp = ()=>{
     }, (0, _miniFrameworkDefault.default).createElement("p", null, "This component is styled using CSS-in-JS!")), (0, _miniFrameworkDefault.default).createElement("p", null, "Komponent stylowany za pomoc\u0105 JS-CSS"));
 };
 exports.default = StyledComp;
+
+},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"d8SYv":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _miniFramework = require("../Modules/MiniFramework");
+var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
+const Modal = ({ children })=>{
+    const style = {
+        backgroundColor: "rgba(0,0,0,0.5)",
+        padding: "20px",
+        borderRadius: "10px",
+        position: "absolute",
+        width: "90vw",
+        height: "90vh"
+    };
+    return (0, _miniFrameworkDefault.default).createPortal((0, _miniFrameworkDefault.default).createElement("div", {
+        style: style,
+        isPortal: true
+    }, "cok"));
+};
+exports.default = Modal;
 
 },{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bhJkM":[function() {},{}]},["gjUm6","d8Dch"], "d8Dch", "parcelRequire94c2")
 

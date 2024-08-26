@@ -30,8 +30,22 @@ const MiniFramework = {
 		};
 	},
 
+	//! Skonczyć portale !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	createPortal: (frameworkEl) => {
+		const container = document.getElementById("modal-root");
+		console.log(frameworkEl);
+		MiniFramework.render(frameworkEl, container, true);
+		return null;
+	},
+
 	// Funkcja do renderowania elementu w kontenerze DOM
 	render: function (frameworkEl, container, replace = false) {
+		if (frameworkEl && frameworkEl.props?.isPortal) {
+			console.log(typeof frameworkEl.tag);
+			this.createPortal(frameworkEl.content, frameworkEl.targetContainer);
+			return;
+		}
+
 		// Obsługa tablicy elementów
 		if (Array.isArray(frameworkEl)) {
 			if (replace) {
@@ -53,7 +67,7 @@ const MiniFramework = {
 		}
 
 		// Obsługa komponentów funkcyjnych
-		if (typeof frameworkEl.tag === "function") {
+		if (frameworkEl && typeof frameworkEl.tag === "function") {
 			this.currentComponent = frameworkEl; // Ustawia aktualny komponent
 			this.stateIndex = 0; // Resetuje indeks stanu
 			this.effectIndex = 0; // Resetuje indeks efektu
@@ -73,9 +87,9 @@ const MiniFramework = {
 		}
 
 		// Tworzy rzeczywisty element DOM dla standardowych tagów
-		const actualDOMElement = document.createElement(frameworkEl.tag);
+		const actualDOMElement = document.createElement(frameworkEl?.tag);
 
-		if (frameworkEl.props && frameworkEl.props.className) {
+		if (frameworkEl?.props && frameworkEl?.props.className) {
 			actualDOMElement.className = frameworkEl.props.className; // Zastosowanie klasy CSS
 		}
 		// Aplikuje atrybuty (props) do utworzonego elementu, z wyłączeniem dzieci
