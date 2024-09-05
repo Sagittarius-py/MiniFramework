@@ -11,7 +11,7 @@ const Modal = ({ children }) => {
 	};
 
 	return MiniFramework.createPortal(
-		<div style={style} isPortal>
+		<div style={style} isPortal className="modal">
 			cok
 		</div>
 	);

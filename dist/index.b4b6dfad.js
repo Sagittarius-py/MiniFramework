@@ -670,10 +670,15 @@ const MiniFramework = {
         };
     },
     //! Skonczyć portale !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    createPortal: (frameworkEl)=>{
-        const container = document.getElementById("modal-root");
-        console.log(frameworkEl);
-        MiniFramework.render(frameworkEl, container, true);
+    // Funkcja tworząca portal
+    createPortal: (frameworkEl, targetContainer)=>{
+        if (!targetContainer) // Jeśli kontener nie został przekazany, domyślnie renderujemy do "modal-root"
+        targetContainer = document.getElementById("modal-root");
+        if (!targetContainer) {
+            console.error("Target container for portal not found.");
+            return null;
+        }
+        MiniFramework.render(frameworkEl, targetContainer, true);
         return null;
     },
     // Funkcja do renderowania elementu w kontenerze DOM
@@ -689,6 +694,11 @@ const MiniFramework = {
             frameworkEl.forEach((element)=>{
                 this.render(element, container, false); // Rekurencyjnie renderuje każdy element z tablicy
             });
+            return;
+        }
+        // Sprawdzamy, czy to jest portal
+        if (frameworkEl?.props?.isPortal) {
+            this.createPortal(frameworkEl.content, frameworkEl.targetContainer);
             return;
         }
         // Obsługa stringów i liczb
@@ -812,6 +822,7 @@ const MiniFramework = {
         const oldNode = this.componentMap.get(component);
         this.currentComponent = component; // Ustawiamy `currentComponent`, żeby działały hooki
         const newNode = component.tag(component.props); // Tworzymy nowy element komponentu
+        if (component?.props?.isPortal) this.createPortal(component.props.content, component.props.targetContainer);
         if (!this.diff(oldNode, newNode)) {
             this.cleanupEffects(component); // Czyścimy efekty przed ponownym renderowaniem
             const domNode = this.render(component, oldNode, true);
@@ -1163,7 +1174,8 @@ const Modal = ({ children })=>{
     };
     return (0, _miniFrameworkDefault.default).createPortal((0, _miniFrameworkDefault.default).createElement("div", {
         style: style,
-        isPortal: true
+        isPortal: true,
+        className: "modal"
     }, "cok"));
 };
 exports.default = Modal;
