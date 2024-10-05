@@ -31,19 +31,10 @@ const MiniFramework = {
 	},
 
 	//! Skonczyć portale !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// Funkcja tworząca portal
-	createPortal: (frameworkEl, targetContainer) => {
-		if (!targetContainer) {
-			// Jeśli kontener nie został przekazany, domyślnie renderujemy do "modal-root"
-			targetContainer = document.getElementById("modal-root");
-		}
-
-		if (!targetContainer) {
-			console.error("Target container for portal not found.");
-			return null;
-		}
-
-		MiniFramework.render(frameworkEl, targetContainer, true);
+	createPortal: (frameworkEl) => {
+		const container = document.getElementById("modal-root");
+		console.log(frameworkEl);
+		MiniFramework.render(frameworkEl, container, true);
 		return null;
 	},
 
@@ -63,12 +54,6 @@ const MiniFramework = {
 			frameworkEl.forEach((element) => {
 				this.render(element, container, false); // Rekurencyjnie renderuje każdy element z tablicy
 			});
-			return;
-		}
-
-		// Sprawdzamy, czy to jest portal
-		if (frameworkEl?.props?.isPortal) {
-			this.createPortal(frameworkEl.content, frameworkEl.targetContainer);
 			return;
 		}
 
@@ -145,62 +130,64 @@ const MiniFramework = {
 
 	// Hook useState
 	useState: function (initialState) {
-		const component = this.currentComponent; // Pobiera aktualny komponent
+		const component = this.currentComponent;
 
 		if (!component) {
-			throw new Error("useState must be called within a component"); // Błąd, jeśli useState jest używany poza komponentem
+			throw new Error("useState must be called within a component");
 		}
 
-		const stateIndex = this.stateIndex++; // Inkrementuje indeks stanu
-		let componentState = this.stateMap.get(component) || []; // Pobiera stan komponentu
+		const stateIndex = this.stateIndex++; // Increment state index
+		let componentState = this.stateMap.get(component) || [];
 
-		if (!componentState[stateIndex]) {
-			componentState[stateIndex] = initialState; // Inicjalizuje stan, jeśli nie jest jeszcze ustawiony
+		// Initialize state if not already set
+		if (typeof componentState[stateIndex] === "undefined") {
+			componentState[stateIndex] = initialState;
 		}
 
 		const setState = (newState) => {
-			const currentState = componentState[stateIndex]; // Bieżący stan
+			const currentState = componentState[stateIndex];
 			const updatedState =
-				typeof newState === "function" ? newState(currentState) : newState; // Nowy stan
+				typeof newState === "function" ? newState(currentState) : newState;
 
+			// Update only if the state has changed
 			if (updatedState !== currentState) {
-				componentState[stateIndex] = updatedState; // Aktualizuje stan, jeśli się zmienił
-				MiniFramework.update(component); // Aktualizuje komponent
+				componentState[stateIndex] = updatedState;
+				this.stateMap.set(component, componentState); // Save state back to map
+				MiniFramework.update(component); // Trigger a component update
 			}
 		};
 
-		this.stateMap.set(component, componentState); // Aktualizuje mapę stanów
-
-		return [componentState[stateIndex], setState]; // Zwraca stan i funkcję do jego aktualizacji
+		this.stateMap.set(component, componentState);
+		return [componentState[stateIndex], setState];
 	},
 
 	// Hook useEffect
 	useEffect: function (effect, deps) {
-		const component = this.currentComponent; // Pobieramy aktualny komponent
-
+		const component = this.currentComponent;
 		if (!component) {
 			throw new Error("useEffect must be called within a component");
 		}
 
-		const effectIndex = this.effectIndex++; // Pobieramy bieżący indeks efektu
+		const effectIndex = this.effectIndex++;
 		let componentEffects = this.effectMap.get(component) || [];
 
 		const prevEffect = componentEffects[effectIndex];
-
-		// Sprawdzamy, czy zależności uległy zmianie
 		const hasChanged =
-			!prevEffect || !deps || deps.some((dep, i) => dep !== prevEffect.deps[i]);
+			!prevEffect ||
+			!deps ||
+			deps.some((dep, i) => dep !== prevEffect.deps?.[i]);
 
+		// If dependencies have changed, or if this is the first time running
 		if (hasChanged) {
 			if (prevEffect && prevEffect.cleanup) {
-				prevEffect.cleanup(); // Czyszczenie poprzedniego efektu, jeśli istnieje
+				prevEffect.cleanup(); // Clean up previous effect
 			}
 
-			const cleanup = effect(); // Wywołanie efektu i przechwycenie funkcji czyszczącej
+			const cleanup = effect(); // Run the new effect and store its cleanup function
 			componentEffects[effectIndex] = { deps, cleanup };
 		}
 
-		this.effectMap.set(component, componentEffects); // Zapis efektów w mapie
+		this.effectMap.set(component, componentEffects);
 	},
 
 	// Uruchamianie efektów po renderowaniu komponentu
@@ -259,13 +246,6 @@ const MiniFramework = {
 		const oldNode = this.componentMap.get(component);
 		this.currentComponent = component; // Ustawiamy `currentComponent`, żeby działały hooki
 		const newNode = component.tag(component.props); // Tworzymy nowy element komponentu
-
-		if (component?.props?.isPortal) {
-			this.createPortal(
-				component.props.content,
-				component.props.targetContainer
-			);
-		}
 
 		if (!this.diff(oldNode, newNode)) {
 			this.cleanupEffects(component); // Czyścimy efekty przed ponownym renderowaniem

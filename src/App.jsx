@@ -8,6 +8,7 @@ import Effect from "./Effect";
 import StyledComp from "./StyledComp";
 import { MyContext } from "./Context";
 import Modal from "./Modal";
+import AxiosComp from "./AxiosComp";
 
 export default function App() {
 	return (
@@ -30,6 +31,8 @@ export default function App() {
 					<StyledComp />
 					<hr />
 					<Modal />
+					<hr />
+					<AxiosComp />
 				</div>
 				<footer></footer>
 			</div>
