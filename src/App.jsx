@@ -31,7 +31,6 @@ export default function App() {
 					<StyledComp />
 					<hr />
 					<Modal />
-					<hr />
 					<AxiosComp />
 				</div>
 				<footer></footer>

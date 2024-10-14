@@ -623,7 +623,7 @@ function App() {
         }
     }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
         id: "container"
-    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _modalDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _axiosCompDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
+    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _modalDefault.default), null), (0, _miniFrameworkDefault.default).createElement((0, _axiosCompDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
 }
 
 },{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./Context":"knXGc","./Modal":"d8SYv","./AxiosComp":"5w9qH","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
@@ -1187,22 +1187,27 @@ function AxiosComp() {
     const [error, setError] = (0, _miniFrameworkDefault.default).useState(null);
     // useEffect with an empty dependency array to ensure it only runs once on mount
     (0, _miniFrameworkDefault.default).useEffect(()=>{
-        const fetchData = async ()=>{
-            try {
-                const response = await (0, _axiosDefault.default).get("https://cat-fact.herokuapp.com/facts");
-                setData(response.data); // Update the data state
-            } catch (err) {
-                setError("Error fetching data"); // Update the error state if there's an issue
-            }
-        };
-        fetchData();
-    }, []); // Empty array ensures the effect runs only once when the component mounts
+        // Fetch data only if it's not already loaded
+        if (!data) {
+            const fetchData = async ()=>{
+                try {
+                    const response = await (0, _axiosDefault.default).get("http://localhost:8000/api/get");
+                    setData(response.data); // Update the data state
+                } catch (err) {
+                    setError("Error fetching data"); // Update the error state if there's an issue
+                }
+            };
+            fetchData();
+        }
+    }, [
+        data
+    ]); // Adding 'data' as a dependency ensures it fetches only when data is null
     // Conditional rendering based on whether there is data or an error
     if (error) return (0, _miniFrameworkDefault.default).createElement("div", null, error);
-    if (data) // Render the list of cat facts
-    return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Cat Facts"), (0, _miniFrameworkDefault.default).createElement("ul", null, data.map((fact, index)=>(0, _miniFrameworkDefault.default).createElement("li", {
-            key: index
-        }, fact.text) // Render each fact's text
+    console.log(data);
+    if (data) return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Products"), (0, _miniFrameworkDefault.default).createElement("ul", null, data.map((product)=>(0, _miniFrameworkDefault.default).createElement("li", {
+            key: product._id
+        }, product.product_name) // Render each fact's text
     )));
     else return (0, _miniFrameworkDefault.default).createElement("div", null, "Loading..."); // Show a loading message while fetching
 }
