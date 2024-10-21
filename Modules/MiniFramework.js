@@ -30,14 +30,6 @@ const MiniFramework = {
 		};
 	},
 
-	//! Skonczyć portale !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	createPortal: (frameworkEl) => {
-		const container = document.getElementById("modal-root");
-		console.log(frameworkEl);
-		MiniFramework.render(frameworkEl, container, true);
-		return null;
-	},
-
 	// Funkcja do renderowania elementu w kontenerze DOM
 	render: function (frameworkEl, container, replace = false) {
 		if (frameworkEl && frameworkEl.props?.isPortal) {
@@ -335,6 +327,44 @@ const MiniFramework = {
 		styleTag.appendChild(document.createTextNode(css));
 
 		return className;
+	},
+
+	//! Routing
+	Router: function ({ routes }) {
+		const [currentPath, setCurrentPath] = MiniFramework.useState(
+			window.location.pathname
+		);
+
+		MiniFramework.useEffect(() => {
+			const onLocationChange = () => setCurrentPath(window.location.pathname);
+
+			window.addEventListener("popstate", onLocationChange);
+
+			return () => {
+				window.removeEventListener("popstate", onLocationChange);
+			};
+		}, []);
+
+		// Renderuje komponent dla bieżącej ścieżki
+		const Component = routes[currentPath] || routes["/404"]; // Obsługa 404, jeśli ścieżka nie pasuje
+		return Component ? Component() : null;
+	},
+	navigate: function (path) {
+		window.history.pushState({}, "", path);
+		const popStateEvent = new PopStateEvent("popstate");
+		window.dispatchEvent(popStateEvent); // Wyzwala event popstate, aby Router mógł zareagować
+	},
+	Link: function ({ to, children }) {
+		const handleClick = (event) => {
+			event.preventDefault(); // Zapobiega domyślnemu przeładowaniu strony
+			MiniFramework.navigate(to); // Wywołuje nawigację
+		};
+
+		return MiniFramework.createElement(
+			"a",
+			{ href: to, onClick: handleClick },
+			children
+		);
 	},
 };
 

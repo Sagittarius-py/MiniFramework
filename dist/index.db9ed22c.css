@@ -1,5 +1,42 @@
 @import "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap";
+.header {
+  color: #fff;
+  text-align: center;
+  background-color: #333;
+  padding: 20px;
+  font-size: 24px;
+}
+
+.nav {
+  background-color: #444;
+  justify-content: space-around;
+  width: 98vw;
+  margin-top: 10px;
+  padding: 10px;
+  display: flex;
+}
+
+a {
+  color: #fff;
+  border-radius: 5px;
+  padding: 10px;
+  text-decoration: none;
+  transition: background-color .3s;
+}
+
+.nav-link:hover {
+  background-color: #666;
+}
+
+.container {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  margin-top: 10px;
+  padding: 20px;
+}
+
 body {
+  max-width: 97vw;
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -94,7 +131,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  height: 1200vh;
+  min-height: 80vh;
   padding-top: 50px;
   display: flex;
 }

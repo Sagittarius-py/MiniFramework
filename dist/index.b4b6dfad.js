@@ -612,21 +612,62 @@ var _effectDefault = parcelHelpers.interopDefault(_effect);
 var _styledComp = require("./StyledComp");
 var _styledCompDefault = parcelHelpers.interopDefault(_styledComp);
 var _context = require("./Context");
-var _modal = require("./Modal");
-var _modalDefault = parcelHelpers.interopDefault(_modal);
 var _axiosComp = require("./AxiosComp");
 var _axiosCompDefault = parcelHelpers.interopDefault(_axiosComp);
+var _appCss = require("./App.css"); // Importowanie pliku CSS
 function App() {
+    const routes = {
+        "/": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "Welcome to Mini.js! Choose a page from the menu."),
+        "/image": (0, _imageDefault.default),
+        "/state1": (0, _state1Default.default),
+        "/state2": (0, _state2Default.default),
+        "/map": (0, _mapCompDefault.default),
+        "/effect": (0, _effectDefault.default),
+        "/styled": (0, _styledCompDefault.default),
+        "/axios": (0, _axiosCompDefault.default),
+        "/404": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "404 - Page Not Found")
+    };
     return (0, _miniFrameworkDefault.default).createElement((0, _context.MyContext).Provider, {
         value: {
             count: 0
         }
-    }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", null, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
-        id: "container"
-    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement("hr", null), (0, _miniFrameworkDefault.default).createElement((0, _modalDefault.default), null), (0, _miniFrameworkDefault.default).createElement((0, _axiosCompDefault.default), null)), (0, _miniFrameworkDefault.default).createElement("footer", null)));
+    }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", {
+        className: "header"
+    }, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("nav", {
+        className: "nav"
+    }, (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/",
+        className: "nav-link"
+    }, "Home"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/image",
+        className: "nav-link"
+    }, "Image Component"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/state1",
+        className: "nav-link"
+    }, "State 1"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/state2",
+        className: "nav-link"
+    }, "State 2"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/map",
+        className: "nav-link"
+    }, "Map Component"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/effect",
+        className: "nav-link"
+    }, "Effect"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/styled",
+        className: "nav-link"
+    }, "Styled Component"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
+        to: "/axios",
+        className: "nav-link"
+    }, "Axios Component")), (0, _miniFrameworkDefault.default).createElement("div", {
+        id: "container",
+        className: "container"
+    }, (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Router, {
+        routes: routes
+    }))));
 }
 
-},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./Context":"knXGc","./Modal":"d8SYv","./AxiosComp":"5w9qH","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./Context":"knXGc","./AxiosComp":"5w9qH","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./App.css":"6n0o6"}],"j4fYt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 const MiniFramework = {
@@ -670,13 +711,6 @@ const MiniFramework = {
                 children
             }
         };
-    },
-    //! Skonczyć portale !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    createPortal: (frameworkEl)=>{
-        const container = document.getElementById("modal-root");
-        console.log(frameworkEl);
-        MiniFramework.render(frameworkEl, container, true);
-        return null;
     },
     // Funkcja do renderowania elementu w kontenerze DOM
     render: function(frameworkEl, container, replace = false) {
@@ -884,6 +918,35 @@ const MiniFramework = {
         // Dodawanie nowego CSS do istniejącego styleTag
         styleTag.appendChild(document.createTextNode(css));
         return className;
+    },
+    //! Routing
+    Router: function({ routes }) {
+        const [currentPath, setCurrentPath] = MiniFramework.useState(window.location.pathname);
+        MiniFramework.useEffect(()=>{
+            const onLocationChange = ()=>setCurrentPath(window.location.pathname);
+            window.addEventListener("popstate", onLocationChange);
+            return ()=>{
+                window.removeEventListener("popstate", onLocationChange);
+            };
+        }, []);
+        // Renderuje komponent dla bieżącej ścieżki
+        const Component = routes[currentPath] || routes["/404"]; // Obsługa 404, jeśli ścieżka nie pasuje
+        return Component ? Component() : null;
+    },
+    navigate: function(path) {
+        window.history.pushState({}, "", path);
+        const popStateEvent = new PopStateEvent("popstate");
+        window.dispatchEvent(popStateEvent); // Wyzwala event popstate, aby Router mógł zareagować
+    },
+    Link: function({ to, children }) {
+        const handleClick = (event)=>{
+            event.preventDefault(); // Zapobiega domyślnemu przeładowaniu strony
+            MiniFramework.navigate(to); // Wywołuje nawigację
+        };
+        return MiniFramework.createElement("a", {
+            href: to,
+            onClick: handleClick
+        }, children);
     }
 };
 // Klasa bazowa dla komponentów
@@ -1151,28 +1214,6 @@ const StyledComp = ()=>{
     }, (0, _miniFrameworkDefault.default).createElement("p", null, "This component is styled using CSS-in-JS!")), (0, _miniFrameworkDefault.default).createElement("p", null, "Komponent stylowany za pomoc\u0105 JS-CSS"));
 };
 exports.default = StyledComp;
-
-},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"d8SYv":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _miniFramework = require("../Modules/MiniFramework");
-var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
-const Modal = ({ children })=>{
-    const style = {
-        backgroundColor: "rgba(0,0,0,0.5)",
-        padding: "20px",
-        borderRadius: "10px",
-        position: "absolute",
-        width: "90vw",
-        height: "90vh"
-    };
-    return (0, _miniFrameworkDefault.default).createPortal((0, _miniFrameworkDefault.default).createElement("div", {
-        style: style,
-        isPortal: true,
-        className: "modal"
-    }, "cok"));
-};
-exports.default = Modal;
 
 },{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5w9qH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -6160,6 +6201,6 @@ Object.entries(HttpStatusCode).forEach(([key, value])=>{
 });
 exports.default = HttpStatusCode;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bhJkM":[function() {},{}]},["gjUm6","d8Dch"], "d8Dch", "parcelRequire94c2")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"6n0o6":[function() {},{}],"bhJkM":[function() {},{}]},["gjUm6","d8Dch"], "d8Dch", "parcelRequire94c2")
 
 //# sourceMappingURL=index.b4b6dfad.js.map

@@ -1,0 +1,43 @@
+/* App.css */
+
+/* Styl dla nagłówka */
+.header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 24px;
+}
+
+/* Styl dla nawigacji */
+.nav {
+    margin-top: 10px;
+    background-color: #444;
+    padding: 10px;
+    display: flex;
+    width: 98vw;;
+    justify-content: space-around;
+}
+
+/* Styl dla linków w nawigacji */
+a {
+    color: white;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+/* Zmiana koloru tła linku po najechaniu myszką */
+.nav-link:hover {
+    background-color: #666;
+}
+
+/* Styl dla głównego kontenera */
+.container {
+    padding: 20px;
+    margin-top: 10px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+
+}
