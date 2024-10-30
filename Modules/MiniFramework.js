@@ -34,7 +34,6 @@ const MiniFramework = {
 	render: function (frameworkEl, container, replace = false) {
 		if (frameworkEl && frameworkEl.props?.isPortal) {
 			console.log(typeof frameworkEl.tag);
-			this.createPortal(frameworkEl.content, frameworkEl.targetContainer);
 			return;
 		}
 
@@ -44,7 +43,7 @@ const MiniFramework = {
 				container.innerHTML = ""; // Opróżnia kontener, jeśli replace jest true
 			}
 			frameworkEl.forEach((element) => {
-				this.render(element, container, false); // Rekurencyjnie renderuje każdy element z tablicy
+				MiniFramework.render(element, container, false); // Rekurencyjnie renderuje każdy element z tablicy
 			});
 			return;
 		}
@@ -60,21 +59,25 @@ const MiniFramework = {
 
 		// Obsługa komponentów funkcyjnych
 		if (frameworkEl && typeof frameworkEl.tag === "function") {
-			this.currentComponent = frameworkEl; // Ustawia aktualny komponent
-			this.stateIndex = 0; // Resetuje indeks stanu
-			this.effectIndex = 0; // Resetuje indeks efektu
-			const componentElement = frameworkEl.tag(frameworkEl.props); // Wywołuje funkcję komponentu
-			this.currentComponent = null;
+			MiniFramework.currentComponent = frameworkEl; // Ustaw aktualny komponent
+			MiniFramework.stateIndex = 0; // Resetuj indeks stanu
+			MiniFramework.effectIndex = 0; // Resetuj indeks efektu
+			const componentElement = frameworkEl.tag(frameworkEl.props);
+			MiniFramework.currentComponent = null; // Wyczyść `currentComponent` po renderowaniu
 
-			const domNode = this.render(componentElement, container, replace); // Rekurencyjnie renderuje element
-			this.componentMap.set(frameworkEl, domNode); // Mapuje komponent na element DOM
+			const domNode = MiniFramework.render(
+				componentElement,
+				container,
+				replace
+			);
+			MiniFramework.componentMap.set(frameworkEl, domNode);
 			return domNode;
 		}
 
 		if (replace && container.firstChild) {
-			const oldComponent = this.componentMap.get(container.firstChild);
+			const oldComponent = MiniFramework.componentMap.get(container.firstChild);
 			if (oldComponent) {
-				this.cleanupEffects(oldComponent); // Czyszczenie efektów, gdy komponent zostaje zastąpiony
+				MiniFramework.cleanupEffects(oldComponent); // Czyszczenie efektów, gdy komponent zostaje zastąpiony
 			}
 		}
 
@@ -105,7 +108,7 @@ const MiniFramework = {
 
 		// Rekurencyjnie renderuje dzieci
 		frameworkEl?.props?.children?.forEach((child) => {
-			this.render(child, actualDOMElement);
+			MiniFramework.render(child, actualDOMElement);
 		});
 
 		// Zastępuje zawartość kontenera, jeśli replace jest true
@@ -115,21 +118,24 @@ const MiniFramework = {
 		container.appendChild(actualDOMElement);
 
 		// Uruchamia efekty po renderowaniu
-		this.runEffects(frameworkEl);
+		MiniFramework.runEffects(frameworkEl);
 
 		return actualDOMElement; // Zwraca element DOM
 	},
 
 	// Hook useState
 	useState: function (initialState) {
-		const component = this.currentComponent;
+		const component = MiniFramework.currentComponent;
 
 		if (!component) {
 			throw new Error("useState must be called within a component");
 		}
 
-		const stateIndex = this.stateIndex++; // Increment state index
-		let componentState = this.stateMap.get(component) || [];
+		const componentInstanceKey = component.instanceKey || Symbol(); // Użycie unikalnego klucza
+		component.instanceKey = componentInstanceKey; // Przechowywanie tego klucza w instancji komponentu
+
+		const stateIndex = MiniFramework.stateIndex++;
+		let componentState = MiniFramework.stateMap.get(componentInstanceKey) || [];
 
 		// Initialize state if not already set
 		if (typeof componentState[stateIndex] === "undefined") {
@@ -144,24 +150,24 @@ const MiniFramework = {
 			// Update only if the state has changed
 			if (updatedState !== currentState) {
 				componentState[stateIndex] = updatedState;
-				this.stateMap.set(component, componentState); // Save state back to map
+				MiniFramework.stateMap.set(componentInstanceKey, componentState); // Save state back to map
 				MiniFramework.update(component); // Trigger a component update
 			}
 		};
 
-		this.stateMap.set(component, componentState);
+		MiniFramework.stateMap.set(componentInstanceKey, componentState);
 		return [componentState[stateIndex], setState];
 	},
 
 	// Hook useEffect
 	useEffect: function (effect, deps) {
-		const component = this.currentComponent;
+		const component = MiniFramework.currentComponent;
 		if (!component) {
 			throw new Error("useEffect must be called within a component");
 		}
 
-		const effectIndex = this.effectIndex++;
-		let componentEffects = this.effectMap.get(component) || [];
+		const effectIndex = MiniFramework.effectIndex++;
+		let componentEffects = MiniFramework.effectMap.get(component) || [];
 
 		const prevEffect = componentEffects[effectIndex];
 		const hasChanged =
@@ -179,12 +185,12 @@ const MiniFramework = {
 			componentEffects[effectIndex] = { deps, cleanup };
 		}
 
-		this.effectMap.set(component, componentEffects);
+		MiniFramework.effectMap.set(component, componentEffects);
 	},
 
 	// Uruchamianie efektów po renderowaniu komponentu
 	runEffects: function (component) {
-		const componentEffects = this.effectMap.get(component) || []; // Pobiera efekty komponentu
+		const componentEffects = MiniFramework.effectMap.get(component) || []; // Pobiera efekty komponentu
 		componentEffects.forEach((effect) => {
 			if (effect.cleanup) {
 				effect.cleanup(); // Wywołuje funkcję czyszczącą efektu, jeśli istnieje
@@ -195,13 +201,13 @@ const MiniFramework = {
 
 	// Obsługa przerywania efektów podczas odmontowywania komponentu
 	cleanupEffects: function (component) {
-		const componentEffects = this.effectMap.get(component) || [];
+		const componentEffects = MiniFramework.effectMap.get(component) || [];
 		componentEffects.forEach((effect) => {
 			if (effect.cleanup) {
 				effect.cleanup(); // Wywołanie wszystkich funkcji czyszczących
 			}
 		});
-		this.effectMap.delete(component); // Usunięcie efektów z mapy po odmontowaniu
+		MiniFramework.effectMap.delete(component); // Usunięcie efektów z mapy po odmontowaniu
 	},
 
 	diff: function (oldNode, newNode) {
@@ -235,18 +241,22 @@ const MiniFramework = {
 
 	// Aktualizacja komponentu
 	update: function (component) {
-		const oldNode = this.componentMap.get(component);
-		this.currentComponent = component; // Ustawiamy `currentComponent`, żeby działały hooki
-		const newNode = component.tag(component.props); // Tworzymy nowy element komponentu
+		const oldNode = MiniFramework.componentMap.get(component);
+		MiniFramework.currentComponent = component; // Ustawiamy `currentComponent`, aby hooki działały poprawnie
+		MiniFramework.stateIndex = 0; // Resetuj indeks stanu
+		MiniFramework.effectIndex = 0; // Resetuj indeks efektu
 
-		if (!this.diff(oldNode, newNode)) {
-			this.cleanupEffects(component); // Czyścimy efekty przed ponownym renderowaniem
-			const domNode = this.render(component, oldNode, true);
-			this.componentMap.set(component, domNode);
+		const newNode = component.tag(component.props);
+
+		if (!MiniFramework.diff(oldNode, newNode)) {
+			MiniFramework.cleanupEffects(component);
+			const domNode = MiniFramework.render(component, oldNode, true);
+			MiniFramework.componentMap.set(component, domNode);
 		} else {
-			this.runEffects(component);
+			MiniFramework.runEffects(component);
 		}
-		this.currentComponent = null; // Czyszczenie `currentComponent` po aktualizacji
+
+		MiniFramework.currentComponent = null;
 	},
 
 	// Funkcja do tworzenia kontekstu
@@ -291,7 +301,7 @@ const MiniFramework = {
 		};
 	},
 	useStyle: function (styles) {
-		const component = this.currentComponent;
+		const component = MiniFramework.currentComponent;
 		if (!component) {
 			throw new Error("useStyle must be called within a component");
 		}

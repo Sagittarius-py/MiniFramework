@@ -3,16 +3,11 @@ import { MyContext } from "./Context";
 
 const State2 = () => {
 	const contextValue = MyContext.useContext();
-	const [state, setState] = MiniFramework.useState(contextValue);
 
+	// Funkcja do aktualizacji wartości kontekstu bez używania lokalnego stanu
 	const increment = () => {
-		setState((prevState) => ({ count: prevState.count + 1 }));
-	};
-
-	// Funkcja do aktualizacji wartości kontekstu
-	const updateContext = () => {
-		MyContext.setContextValue({ count: state.count + 1 });
-		console.log(contextValue);
+		MyContext.setContextValue({ count: contextValue.count + 1 });
+		console.log(contextValue); // Sprawdzenie wartości kontekstu w konsoli
 	};
 
 	return (
@@ -21,7 +16,6 @@ const State2 = () => {
 			<button
 				onClick={() => {
 					increment();
-					updateContext(); // Aktualizuj kontekst po inkrementacji
 				}}
 			>
 				Increment

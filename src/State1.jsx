@@ -1,18 +1,17 @@
 import MiniFramework from "../Modules/MiniFramework";
 
 const State1 = (props) => {
-	const [state, setState] = MiniFramework.useState({ count: 0 });
+	const [wartosc, setWartosc] = MiniFramework.useState({ wartosc: 0 });
 
 	const increment = () => {
-		setState((prevState) => ({ count: prevState.count + 1 }));
+		setWartosc((prevState) => ({ wartosc: prevState.wartosc + 1 }));
 	};
 	return (
 		<div>
-			<p>Count: {state.count}</p>
+			<p>Count: {wartosc.wartosc}</p>
 			<button
 				onClick={() => {
 					increment();
-					console.log("cok");
 				}}
 			>
 				Increment
