@@ -770,26 +770,32 @@ const MiniFramework = {
         MiniFramework.runEffects(frameworkEl);
         return actualDOMElement; // Zwraca element DOM
     },
-    // Hook useState
     useState: function(initialState) {
-        const component = MiniFramework.currentComponent;
+        const component = this.currentComponent;
         if (!component) throw new Error("useState must be called within a component");
-        const componentInstanceKey = component.instanceKey || Symbol(); // Użycie unikalnego klucza
-        component.instanceKey = componentInstanceKey; // Przechowywanie tego klucza w instancji komponentu
+        // Upewnienie się, że każdy komponent ma unikalny klucz
+        const componentInstanceKey = component.instanceKey || Symbol();
+        component.instanceKey = componentInstanceKey;
+        // Reset `stateIndex` przy każdym renderze komponentu
+        if (MiniFramework.lastComponent !== component) {
+            MiniFramework.stateIndex = 0;
+            MiniFramework.lastComponent = component;
+        }
         const stateIndex = MiniFramework.stateIndex++;
         let componentState = MiniFramework.stateMap.get(componentInstanceKey) || [];
-        // Initialize state if not already set
+        // Inicjalizacja stanu, jeśli nie jest jeszcze ustawiony
         if (typeof componentState[stateIndex] === "undefined") componentState[stateIndex] = initialState;
         const setState = (newState)=>{
             const currentState = componentState[stateIndex];
             const updatedState = typeof newState === "function" ? newState(currentState) : newState;
-            // Update only if the state has changed
+            // Aktualizuj stan tylko, jeśli jest inny
             if (updatedState !== currentState) {
                 componentState[stateIndex] = updatedState;
-                MiniFramework.stateMap.set(componentInstanceKey, componentState); // Save state back to map
-                MiniFramework.update(component); // Trigger a component update
+                MiniFramework.stateMap.set(componentInstanceKey, componentState);
+                MiniFramework.update(component); // Wywołaj renderowanie komponentu
             }
         };
+        // Zapisz stan w `stateMap` dla tego komponentu
         MiniFramework.stateMap.set(componentInstanceKey, componentState);
         return [
             componentState[stateIndex],
@@ -922,25 +928,41 @@ const MiniFramework = {
         styleTag.appendChild(document.createTextNode(css));
         return className;
     },
-    //! Routing
     Router: function({ routes }) {
-        const [currentPath, setCurrentPath] = MiniFramework.useState(window.location.pathname);
+        let globalPath = window.location.pathname;
+        const [currentPath, setCurrentPath] = MiniFramework.useState(globalPath);
         MiniFramework.useEffect(()=>{
-            const onLocationChange = ()=>setCurrentPath(window.location.pathname);
+            const onLocationChange = ()=>{
+                if (globalPath !== window.location.pathname) {
+                    globalPath = window.location.pathname;
+                    setCurrentPath(globalPath); // Aktualizuj `currentPath` bezpośrednio
+                }
+            };
             window.addEventListener("popstate", onLocationChange);
             return ()=>{
                 window.removeEventListener("popstate", onLocationChange);
             };
         }, []);
-        // Renderuje komponent dla bieżącej ścieżki
-        const Component = routes[currentPath] || routes["/404"]; // Obsługa 404, jeśli ścieżka nie pasuje
-        return Component ? Component() : null;
+        // Sprawdzanie, czy aktualna ścieżka jest dostępna w `routes`
+        const Component = routes[currentPath] || routes["/404"];
+        return Component ? MiniFramework.createElement(Component, {
+            key: currentPath
+        }) : null;
     },
+    // Zaktualizowana `navigate` z bezpośrednim ustawieniem `currentPath`
     navigate: function(path) {
-        window.history.pushState({}, "", path);
-        const popStateEvent = new PopStateEvent("popstate");
-        window.dispatchEvent(popStateEvent); // Wyzwala event popstate, aby Router mógł zareagować
+        let globalPath = window.location.pathname;
+        if (globalPath !== path) {
+            window.history.pushState({}, "", path);
+            globalPath = path;
+            const popStateEvent = new PopStateEvent("popstate");
+            window.dispatchEvent(popStateEvent); // Wyzwala event popstate
+            // Aktualizuje currentPath bez czekania na `popstate`
+            const routerComponent = MiniFramework.currentComponent;
+            if (routerComponent) routerComponent.setCurrentPath(path);
+        }
     },
+    // Link pozostaje taki sam
     Link: function({ to, children }) {
         const handleClick = (event)=>{
             event.preventDefault(); // Zapobiega domyślnemu przeładowaniu strony
@@ -1107,9 +1129,9 @@ const State1 = (props)=>{
         wartosc: 0
     });
     const increment = ()=>{
-        setWartosc((prevState)=>({
-                wartosc: prevState.wartosc + 1
-            }));
+        setWartosc(()=>{
+            wartosc: wartosc.wartosc;
+        });
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", wartosc.wartosc), (0, _miniFrameworkDefault.default).createElement("button", {
         onClick: ()=>{

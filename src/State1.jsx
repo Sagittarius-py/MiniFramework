@@ -4,7 +4,9 @@ const State1 = (props) => {
 	const [wartosc, setWartosc] = MiniFramework.useState({ wartosc: 0 });
 
 	const increment = () => {
-		setWartosc((prevState) => ({ wartosc: prevState.wartosc + 1 }));
+		setWartosc(() => {
+			wartosc: wartosc.wartosc + 1;
+		});
 	};
 	return (
 		<div>
