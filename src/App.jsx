@@ -6,18 +6,15 @@ import State2 from "./State2";
 import MapComp from "./MapComp";
 import Effect from "./Effect";
 import StyledComp from "./StyledComp";
-import { MyContext } from "./Context";
 import AxiosComp from "./AxiosComp";
 import "./App.css"; // Importowanie pliku CSS
 
-export default function App() {
+export default App = () => {
+	const { Provider, useContext, setContextValue } =
+		MiniFramework.createContext(0);
+
 	const routes = {
-		"/": () =>
-			MiniFramework.createElement(
-				"div",
-				null,
-				"Welcome to Mini.js! Choose a page from the menu."
-			),
+		"/": () => <div>Welcome to Mini.js! Choose a page from the menu.</div>,
 		"/image": ImageComp,
 		"/state1": State1,
 		"/state2": State2,
@@ -25,12 +22,11 @@ export default function App() {
 		"/effect": Effect,
 		"/styled": StyledComp,
 		"/axios": AxiosComp,
-		"/404": () =>
-			MiniFramework.createElement("div", null, "404 - Page Not Found"),
+		"/404": () => <div>404 - Page Not Found</div>,
 	};
 
 	return (
-		<MyContext.Provider value={{ count: 0 }}>
+		<Provider count={10}>
 			<div>
 				{/* Nagłówek aplikacji */}
 				<header className="header">
@@ -70,6 +66,6 @@ export default function App() {
 					<MiniFramework.Router routes={routes} />
 				</div>
 			</div>
-		</MyContext.Provider>
+		</Provider>
 	);
-}
+};

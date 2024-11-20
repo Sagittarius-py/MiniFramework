@@ -591,12 +591,11 @@ var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _styleCss = require("./style.css");
 // Initialize and render the App component
-(0, _miniFrameworkDefault.default).render((0, _appDefault.default)(), document.querySelector("#root"));
+(0, _miniFrameworkDefault.default).render((0, _miniFrameworkDefault.default).createElement((0, _appDefault.default)), document.querySelector("#root"));
 
 },{"./App":"e9Zfo","../Modules/MiniFramework":"j4fYt","./style.css":"bhJkM","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"e9Zfo":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "default", ()=>App);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _image = require("./image");
@@ -611,11 +610,11 @@ var _effect = require("./Effect");
 var _effectDefault = parcelHelpers.interopDefault(_effect);
 var _styledComp = require("./StyledComp");
 var _styledCompDefault = parcelHelpers.interopDefault(_styledComp);
-var _context = require("./Context");
 var _axiosComp = require("./AxiosComp");
 var _axiosCompDefault = parcelHelpers.interopDefault(_axiosComp);
 var _appCss = require("./App.css"); // Importowanie pliku CSS
-function App() {
+exports.default = App = ()=>{
+    const { Provider, useContext, setContextValue } = (0, _miniFrameworkDefault.default).createContext(0);
     const routes = {
         "/": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "Welcome to Mini.js! Choose a page from the menu."),
         "/image": (0, _imageDefault.default),
@@ -627,10 +626,8 @@ function App() {
         "/axios": (0, _axiosCompDefault.default),
         "/404": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "404 - Page Not Found")
     };
-    return (0, _miniFrameworkDefault.default).createElement((0, _context.MyContext).Provider, {
-        value: {
-            count: 0
-        }
+    return (0, _miniFrameworkDefault.default).createElement(Provider, {
+        count: 10
     }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", {
         className: "header"
     }, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("nav", {
@@ -665,9 +662,9 @@ function App() {
     }, (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Router, {
         routes: routes
     }))));
-}
+};
 
-},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./Context":"knXGc","./AxiosComp":"5w9qH","./App.css":"6n0o6","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./AxiosComp":"5w9qH","./App.css":"6n0o6","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 const MiniFramework = {
@@ -1048,20 +1045,23 @@ var _1Jpg = require("./1.jpg");
 var _1JpgDefault = parcelHelpers.interopDefault(_1Jpg);
 var _context = require("./Context");
 const ImageComp = ()=>{
-    const contextValue = (0, _context.MyContext).useContext();
+    const context = (0, _context.CounterContext); // Uzyskujemy dostęp do kontekstu
+    const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("img", {
         name: "image",
         id: "image",
         src: (0, _1JpgDefault.default),
         alt: "fireSpot"
     }), (0, _miniFrameworkDefault.default).createElement("br", null), (0, _miniFrameworkDefault.default).createElement("label", {
-        for: "image",
-        style: "color: white"
-    }, "Importowane zdj\u0119cie w jsx"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 contextu w innym componencie: ", contextValue.count));
+        htmlFor: "image",
+        style: {
+            color: "white"
+        }
+    }, "Importowane zdj\u0119cie w JSX"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 contextu w innym komponencie: ", value), " ");
 };
 exports.default = ImageComp;
 
-},{"../Modules/MiniFramework":"j4fYt","./1.jpg":"4ibEP","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4ibEP":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./1.jpg":"4ibEP","./Context":"49Q86","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4ibEP":[function(require,module,exports) {
 module.exports = require("bcfd47919a7e1b9").getBundleURL("byUka") + "1.e6545fd6.jpg" + "?" + Date.now();
 
 },{"bcfd47919a7e1b9":"lgJ39"}],"lgJ39":[function(require,module,exports) {
@@ -1099,25 +1099,14 @@ exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
 exports.getOrigin = getOrigin;
 
-},{}],"knXGc":[function(require,module,exports) {
+},{}],"49Q86":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "MyContext", ()=>MyContext);
-parcelHelpers.export(exports, "MyContextProvider", ()=>MyContextProvider);
+parcelHelpers.export(exports, "CounterContext", ()=>CounterContext);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
-const MyContext = (0, _miniFrameworkDefault.default).createContext();
-const MyContextProvider = ({ children })=>{
-    const [contextValue, setContextValue] = (0, _miniFrameworkDefault.default).useState({
-        count: 0
-    });
-    return (0, _miniFrameworkDefault.default).createElement(MyContext.Provider, {
-        value: {
-            contextValue,
-            setContextValue
-        }
-    }, children);
-};
+// Tworzymy kontekst o nazwie "CounterContext" z wartością początkową 0
+const CounterContext = (0, _miniFrameworkDefault.default).createContext(0);
 
 },{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2Eq2J":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1129,16 +1118,18 @@ const State1 = (props)=>{
         wartosc: 0
     });
     const increment = ()=>{
-        setWartosc(()=>{
-            wartosc: wartosc.wartosc;
-        });
+        setWartosc((prevWartosc)=>({
+                wartosc: prevWartosc.wartosc + 1
+            }));
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", wartosc.wartosc), (0, _miniFrameworkDefault.default).createElement("button", {
         onClick: ()=>{
             increment();
         }
     }, "Increment"), (0, _miniFrameworkDefault.default).createElement("p", {
-        style: "color: white"
+        style: {
+            color: "white"
+        }
     }, "Zmiana stanu i dynamiczne renderowanie w komponentach funkcyjnych"));
 };
 exports.default = State1;
@@ -1150,27 +1141,19 @@ var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _context = require("./Context");
 const State2 = ()=>{
-    const contextValue = (0, _context.MyContext).useContext();
-    // Funkcja do aktualizacji wartości kontekstu bez używania lokalnego stanu
+    const context = (0, _context.CounterContext); // Uzyskujemy dostęp do kontekstu
+    const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
+    // Funkcja do zmiany wartości kontekstu o 1
     const increment = ()=>{
-        (0, _context.MyContext).setContextValue({
-            count: contextValue.count + 1
-        });
-        console.log(contextValue); // Sprawdzenie wartości kontekstu w konsoli
+        context.setContextValue(value + 1); // Zwiększamy wartość o 1
     };
-    return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("p", null, "Count: ", contextValue.count), (0, _miniFrameworkDefault.default).createElement("button", {
-        onClick: ()=>{
-            increment();
-        }
-    }, "Increment"), (0, _miniFrameworkDefault.default).createElement("p", {
-        style: {
-            color: "white"
-        }
-    }, "Contextowa zmiana stanu"));
+    return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("button", {
+        onClick: increment
+    }, "Zwi\u0119ksz o 1"));
 };
 exports.default = State2;
 
-},{"../Modules/MiniFramework":"j4fYt","./Context":"knXGc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9GO05":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./Context":"49Q86","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9GO05":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");

@@ -1,26 +1,18 @@
 import MiniFramework from "../Modules/MiniFramework";
-import { MyContext } from "./Context";
+import { CounterContext } from "./Context";
 
 const State2 = () => {
-	const contextValue = MyContext.useContext();
+	const context = CounterContext; // Uzyskujemy dostęp do kontekstu
+	const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
 
-	// Funkcja do aktualizacji wartości kontekstu bez używania lokalnego stanu
+	// Funkcja do zmiany wartości kontekstu o 1
 	const increment = () => {
-		MyContext.setContextValue({ count: contextValue.count + 1 });
-		console.log(contextValue); // Sprawdzenie wartości kontekstu w konsoli
+		context.setContextValue(value + 1); // Zwiększamy wartość o 1
 	};
 
 	return (
 		<div>
-			<p>Count: {contextValue.count}</p>
-			<button
-				onClick={() => {
-					increment();
-				}}
-			>
-				Increment
-			</button>
-			<p style={{ color: "white" }}>Contextowa zmiana stanu</p>
+			<button onClick={increment}>Zwiększ o 1</button>
 		</div>
 	);
 };

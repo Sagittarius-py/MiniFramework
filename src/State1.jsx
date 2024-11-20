@@ -4,10 +4,11 @@ const State1 = (props) => {
 	const [wartosc, setWartosc] = MiniFramework.useState({ wartosc: 0 });
 
 	const increment = () => {
-		setWartosc(() => {
-			wartosc: wartosc.wartosc + 1;
-		});
+		setWartosc((prevWartosc) => ({
+			wartosc: prevWartosc.wartosc + 1,
+		}));
 	};
+
 	return (
 		<div>
 			<p>Count: {wartosc.wartosc}</p>
@@ -18,7 +19,7 @@ const State1 = (props) => {
 			>
 				Increment
 			</button>
-			<p style="color: white">
+			<p style={{ color: "white" }}>
 				Zmiana stanu i dynamiczne renderowanie w komponentach funkcyjnych
 			</p>
 		</div>
