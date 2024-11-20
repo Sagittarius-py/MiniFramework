@@ -876,7 +876,9 @@ const MiniFramework = {
         // Funkcja do modyfikacji wartości kontekstu
         function setContextValue(newValue) {
             context.state = newValue; // Ustawia nową wartość stanu kontekstu
-            context.subscribers.forEach((callback)=>callback(newValue)); // Powiadamia subskrybentów o zmianie
+            console.log(context.subscribers);
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
         }
         // Komponent Provider umożliwiający aktualizację kontekstu
         function Provider({ value, children }) {
@@ -1149,7 +1151,7 @@ const State2 = ()=>{
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("button", {
         onClick: increment
-    }, "Zwi\u0119ksz o 1"));
+    }, "Zwi\u0119ksz o 1"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 contextu w innym komponencie: ", value));
 };
 exports.default = State2;
 

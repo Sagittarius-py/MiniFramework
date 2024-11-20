@@ -277,7 +277,9 @@ const MiniFramework = {
 		// Funkcja do modyfikacji wartości kontekstu
 		function setContextValue(newValue) {
 			context.state = newValue; // Ustawia nową wartość stanu kontekstu
-			context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
+			console.log(context.subscribers);
+			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
 		}
 
 		// Komponent Provider umożliwiający aktualizację kontekstu

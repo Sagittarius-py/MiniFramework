@@ -13,6 +13,7 @@ const State2 = () => {
 	return (
 		<div>
 			<button onClick={increment}>Zwiększ o 1</button>
+			<p>Wartość contextu w innym komponencie: {value}</p>
 		</div>
 	);
 };
