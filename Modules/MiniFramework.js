@@ -273,50 +273,61 @@ const MiniFramework = {
 		MiniFramework.currentComponent = null;
 	},
 
-	// Funkcja do tworzenia kontekstu
 	createContext: function (defaultValue) {
 		const context = {
-			defaultValue, // Wartość domyślna kontekstu
-			state: defaultValue, // Bieżący stan kontekstu
-			subscribers: new Set(), // Zbiór subskrybentów aktualizacji kontekstu
+			defaultValue,
+			state: defaultValue,
+			subscribers: new Set(),
 		};
 
-		// Funkcja do modyfikacji wartości kontekstu
 		function setContextValue(newValue) {
-			context.state = newValue; // Ustawia nową wartość stanu kontekstu
-			console.log(context.subscribers);
-			context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
+			console.log("Setting context value:", newValue); // Dodaj log
+			context.state = newValue;
+
+			// Wywołaj subskrybentów bezpośrednio
+			context.subscribers.forEach((subscriber) => {
+				console.log("Notifying subscriber"); // Log subskrybentów
+				subscriber(newValue);
+			});
 		}
 
-		// Komponent Provider umożliwiający aktualizację kontekstu
 		function Provider({ value, children }) {
+			console.log("Provider value:", value); // Log wartości providera
 			if (value !== undefined) {
-				setContextValue(value); // Aktualizuje wartość kontekstu, jeśli została podana
+				context.state = value;
 			}
-			return children; // Renderuje dzieci
+			return children;
 		}
 
-		// Hook useContext do uzyskiwania wartości kontekstu
 		function useContext() {
-			const [value, setValue] = MiniFramework.useState(context.state);
+			const [contextValue, setContextValue] = MiniFramework.useState(
+				context.state
+			);
 
 			MiniFramework.useEffect(() => {
-				const updateValue = (newValue) => setValue(newValue);
+				const updateValue = (newValue) => {
+					console.log("Updating context value in component:", newValue); // Log aktualizacji
+					setContextValue(newValue);
+				};
+
 				context.subscribers.add(updateValue);
 
 				return () => {
-					context.subscribers.delete(updateValue); // Clean up on unmount
+					context.subscribers.delete(updateValue);
 				};
 			}, []);
 
-			return value;
+			return contextValue;
 		}
+
 		return {
-			Provider, // Komponent Provider
-			useContext, // Hook useContext
-			setContextValue, // Funkcja do zmiany wartości kontekstu
+			Provider,
+			useContext,
+			setContextValue,
+			getState: () => context.state, // Dodatkowa metoda do debugowania
 		};
 	},
+
 	useStyle: function (styles) {
 		const component = MiniFramework.currentComponent;
 		if (!component) {

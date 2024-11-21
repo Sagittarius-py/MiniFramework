@@ -3,8 +3,7 @@ import image from "./1.jpg";
 import { CounterContext } from "./Context";
 
 const ImageComp = () => {
-	const context = CounterContext; // Uzyskujemy dostęp do kontekstu
-	const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
+	const value = CounterContext.useContext();
 
 	return (
 		<div>

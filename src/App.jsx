@@ -10,8 +10,7 @@ import AxiosComp from "./AxiosComp";
 import "./App.css"; // Importowanie pliku CSS
 
 export default App = () => {
-	const { Provider, useContext, setContextValue } =
-		MiniFramework.createContext(0);
+	const CounterContext = MiniFramework.createContext(0);
 
 	const routes = {
 		"/": () => <div>Welcome to Mini.js! Choose a page from the menu.</div>,
@@ -26,7 +25,7 @@ export default App = () => {
 	};
 
 	return (
-		<Provider count={10}>
+		<CounterContext.Provider count={10}>
 			<div>
 				{/* Nagłówek aplikacji */}
 				<header className="header">
@@ -66,6 +65,6 @@ export default App = () => {
 					<MiniFramework.Router routes={routes} />
 				</div>
 			</div>
-		</Provider>
+		</CounterContext.Provider>
 	);
 };

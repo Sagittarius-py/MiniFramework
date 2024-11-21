@@ -2,18 +2,19 @@ import MiniFramework from "../Modules/MiniFramework";
 import { CounterContext } from "./Context";
 
 const State2 = () => {
-	const context = CounterContext; // Uzyskujemy dostęp do kontekstu
-	const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
+	const value = CounterContext.useContext();
 
-	// Funkcja do zmiany wartości kontekstu o 1
 	const increment = () => {
-		context.setContextValue(value + 1); // Zwiększamy wartość o 1
+		console.log("Current value before increment:", value); // Log przed inkrementacją
+		const newValue = value + 1;
+		console.log("New value:", newValue); // Log nowej wartości
+		CounterContext.setContextValue(newValue);
 	};
 
 	return (
 		<div>
 			<button onClick={increment}>Zwiększ o 1</button>
-			<p>Wartość contextu w innym komponencie: {value}</p>
+			<p>Wartość kontekstu w innym komponencie: {value}</p>
 		</div>
 	);
 };

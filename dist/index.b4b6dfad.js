@@ -614,7 +614,7 @@ var _axiosComp = require("./AxiosComp");
 var _axiosCompDefault = parcelHelpers.interopDefault(_axiosComp);
 var _appCss = require("./App.css"); // Importowanie pliku CSS
 exports.default = App = ()=>{
-    const { Provider, useContext, setContextValue } = (0, _miniFrameworkDefault.default).createContext(0);
+    const CounterContext = (0, _miniFrameworkDefault.default).createContext(0);
     const routes = {
         "/": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "Welcome to Mini.js! Choose a page from the menu."),
         "/image": (0, _imageDefault.default),
@@ -626,7 +626,7 @@ exports.default = App = ()=>{
         "/axios": (0, _axiosCompDefault.default),
         "/404": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "404 - Page Not Found")
     };
-    return (0, _miniFrameworkDefault.default).createElement(Provider, {
+    return (0, _miniFrameworkDefault.default).createElement(CounterContext.Provider, {
         count: 10
     }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", {
         className: "header"
@@ -867,44 +867,45 @@ const MiniFramework = {
         } else MiniFramework.runEffects(component);
         MiniFramework.currentComponent = null;
     },
-    // Funkcja do tworzenia kontekstu
     createContext: function(defaultValue) {
         const context = {
             defaultValue,
-            // Wartość domyślna kontekstu
             state: defaultValue,
-            // Bieżący stan kontekstu
-            subscribers: new Set() // Zbiór subskrybentów aktualizacji kontekstu
+            subscribers: new Set()
         };
-        // Funkcja do modyfikacji wartości kontekstu
         function setContextValue(newValue) {
-            context.state = newValue; // Ustawia nową wartość stanu kontekstu
-            console.log(context.subscribers);
-            context.subscribers.forEach((callback)=>callback(newValue)); // Powiadamia subskrybentów o zmianie
+            console.log("Setting context value:", newValue); // Dodaj log
+            context.state = newValue;
+            // Wywołaj subskrybentów bezpośrednio
+            context.subscribers.forEach((subscriber)=>{
+                console.log("Notifying subscriber"); // Log subskrybentów
+                subscriber(newValue);
+            });
         }
-        // Komponent Provider umożliwiający aktualizację kontekstu
         function Provider({ value, children }) {
-            if (value !== undefined) setContextValue(value); // Aktualizuje wartość kontekstu, jeśli została podana
-            return children; // Renderuje dzieci
+            console.log("Provider value:", value); // Log wartości providera
+            if (value !== undefined) context.state = value;
+            return children;
         }
-        // Hook useContext do uzyskiwania wartości kontekstu
         function useContext() {
-            const [value, setValue] = MiniFramework.useState(context.state);
+            const [contextValue, setContextValue] = MiniFramework.useState(context.state);
             MiniFramework.useEffect(()=>{
-                const updateValue = (newValue)=>setValue(newValue);
+                const updateValue = (newValue)=>{
+                    console.log("Updating context value in component:", newValue); // Log aktualizacji
+                    setContextValue(newValue);
+                };
                 context.subscribers.add(updateValue);
                 return ()=>{
-                    context.subscribers.delete(updateValue); // Clean up on unmount
+                    context.subscribers.delete(updateValue);
                 };
             }, []);
-            return value;
+            return contextValue;
         }
         return {
             Provider,
-            // Komponent Provider
             useContext,
-            // Hook useContext
-            setContextValue
+            setContextValue,
+            getState: ()=>context.state // Dodatkowa metoda do debugowania
         };
     },
     useStyle: function(styles) {
@@ -1051,8 +1052,7 @@ var _1Jpg = require("./1.jpg");
 var _1JpgDefault = parcelHelpers.interopDefault(_1Jpg);
 var _context = require("./Context");
 const ImageComp = ()=>{
-    const context = (0, _context.CounterContext); // Uzyskujemy dostęp do kontekstu
-    const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
+    const value = (0, _context.CounterContext).useContext();
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("img", {
         name: "image",
         id: "image",
@@ -1111,7 +1111,6 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CounterContext", ()=>CounterContext);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
-// Tworzymy kontekst o nazwie "CounterContext" z wartością początkową 0
 const CounterContext = (0, _miniFrameworkDefault.default).createContext(0);
 
 },{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2Eq2J":[function(require,module,exports) {
@@ -1147,15 +1146,16 @@ var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _context = require("./Context");
 const State2 = ()=>{
-    const context = (0, _context.CounterContext); // Uzyskujemy dostęp do kontekstu
-    const value = context.useContext(); // Pobieramy bieżącą wartość kontekstu
-    // Funkcja do zmiany wartości kontekstu o 1
+    const value = (0, _context.CounterContext).useContext();
     const increment = ()=>{
-        context.setContextValue(value + 1); // Zwiększamy wartość o 1
+        console.log("Current value before increment:", value); // Log przed inkrementacją
+        const newValue = value + 1;
+        console.log("New value:", newValue); // Log nowej wartości
+        (0, _context.CounterContext).setContextValue(newValue);
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("button", {
         onClick: increment
-    }, "Zwi\u0119ksz o 1"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 contextu w innym komponencie: ", value));
+    }, "Zwi\u0119ksz o 1"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 kontekstu w innym komponencie: ", value));
 };
 exports.default = State2;
 
