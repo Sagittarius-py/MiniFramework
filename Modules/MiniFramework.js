@@ -182,14 +182,21 @@ const MiniFramework = {
 			!deps ||
 			deps.some((dep, i) => dep !== prevEffect.deps?.[i]);
 
-		// If dependencies have changed, or if this is the first time running
 		if (hasChanged) {
 			if (prevEffect && prevEffect.cleanup) {
 				prevEffect.cleanup(); // Clean up previous effect
 			}
 
-			const cleanup = effect(); // Run the new effect and store its cleanup function
-			componentEffects[effectIndex] = { deps, cleanup };
+			let isActive = true; // Guard for async operations
+			const cleanup = effect(() => isActive); // Pass `isActive` to effect
+
+			componentEffects[effectIndex] = {
+				deps,
+				cleanup: () => {
+					isActive = false; // Mark as inactive
+					if (cleanup) cleanup();
+				},
+			};
 		}
 
 		MiniFramework.effectMap.set(component, componentEffects);
@@ -278,8 +285,7 @@ const MiniFramework = {
 		function setContextValue(newValue) {
 			context.state = newValue; // Ustawia nową wartość stanu kontekstu
 			console.log(context.subscribers);
-			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			// context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
+			context.subscribers.forEach((callback) => callback(newValue)); // Powiadamia subskrybentów o zmianie
 		}
 
 		// Komponent Provider umożliwiający aktualizację kontekstu
@@ -292,17 +298,19 @@ const MiniFramework = {
 
 		// Hook useContext do uzyskiwania wartości kontekstu
 		function useContext() {
-			const [value, setValue] = MiniFramework.useState(context.state); // Uzyskuje aktualną wartość kontekstu
+			const [value, setValue] = MiniFramework.useState(context.state);
 
 			MiniFramework.useEffect(() => {
-				const updateValue = (newValue) => setValue(newValue); // Funkcja aktualizująca stan z nową wartością kontekstu
-				context.subscribers.add(updateValue); // Dodaje funkcję aktualizującą do subskrybentów
-				return () => context.subscribers.delete(updateValue); // Usuwa funkcję z subskrybentów podczas odmontowania
+				const updateValue = (newValue) => setValue(newValue);
+				context.subscribers.add(updateValue);
+
+				return () => {
+					context.subscribers.delete(updateValue); // Clean up on unmount
+				};
 			}, []);
 
-			return value; // Zwraca wartość kontekstu
+			return value;
 		}
-
 		return {
 			Provider, // Komponent Provider
 			useContext, // Hook useContext
