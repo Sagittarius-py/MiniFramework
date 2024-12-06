@@ -274,57 +274,61 @@ const MiniFramework = {
 	},
 
 	createContext: function (defaultValue) {
-		const context = {
-			defaultValue,
-			state: defaultValue,
-			subscribers: new Set(),
-		};
-
-		function setContextValue(newValue) {
-			console.log("Setting context value:", newValue); // Dodaj log
-			context.state = newValue;
-
-			// Wywołaj subskrybentów bezpośrednio
-			context.subscribers.forEach((subscriber) => {
-				console.log("Notifying subscriber"); // Log subskrybentów
-				subscriber(newValue);
-			});
-		}
-
-		function Provider({ value, children }) {
-			console.log("Provider value:", value); // Log wartości providera
-			if (value !== undefined) {
-				context.state = value;
-			}
-			return children;
-		}
-
-		function useContext() {
-			const [contextValue, setContextValue] = MiniFramework.useState(
-				context.state
-			);
-
-			MiniFramework.useEffect(() => {
-				const updateValue = (newValue) => {
-					console.log("Updating context value in component:", newValue); // Log aktualizacji
-					setContextValue(newValue);
-				};
-
-				context.subscribers.add(updateValue);
-
-				return () => {
-					context.subscribers.delete(updateValue);
-				};
-			}, []);
-
-			return contextValue;
-		}
+		let contextState = defaultValue;
+		const subscribers = new Set();
 
 		return {
-			Provider,
-			useContext,
-			setContextValue,
-			getState: () => context.state, // Dodatkowa metoda do debugowania
+			Provider: function ({ value, children }) {
+				// Aktualizacja globalnego stanu kontekstu
+				if (value !== undefined) {
+					contextState = value;
+				}
+
+				// Powiadamianie subskrybentów o zmianie
+				subscribers.forEach((subscriber) => {
+					try {
+						subscriber(contextState);
+					} catch (error) {
+						console.error("Context subscriber error:", error);
+					}
+				});
+
+				return children;
+			},
+
+			useContext: function () {
+				const [contextValue, setContextValue] =
+					MiniFramework.useState(contextState);
+
+				// Efekt synchronizujący wartość kontekstu
+				MiniFramework.useEffect(() => {
+					const updateHandler = (newValue) => {
+						setContextValue(newValue);
+					};
+
+					// Dodanie subskrybenta
+					subscribers.add(updateHandler);
+
+					// Czyszczenie subskrybenta
+					return () => {
+						subscribers.delete(updateHandler);
+					};
+				}, []);
+
+				return contextValue;
+			},
+
+			// Metoda do bezpośredniej zmiany wartości kontekstu
+			setValue: (newValue) => {
+				contextState = newValue;
+				subscribers.forEach((subscriber) => {
+					try {
+						subscriber(newValue);
+					} catch (error) {
+						console.error("Context update error:", error);
+					}
+				});
+			},
 		};
 	},
 
@@ -367,101 +371,133 @@ const MiniFramework = {
 		return className;
 	},
 
-	Router: function ({ routes }) {
-		let globalPath = window.location.pathname;
-		const [currentPath, setCurrentPath] = MiniFramework.useState(globalPath);
+	// createRouter: function (routes) {
+	// 	// Private state to track current route and route parameters
+	// 	let currentRoute = null;
+	// 	let routeParams = {};
 
-		MiniFramework.useEffect(() => {
-			const onLocationChange = () => {
-				if (globalPath !== window.location.pathname) {
-					globalPath = window.location.pathname;
-					setCurrentPath(globalPath); // Aktualizuj `currentPath` bezpośrednio
-				}
-			};
+	// 	// Utility function to parse route parameters
+	// 	const parseRouteParams = (pattern, path) => {
+	// 		const params = {};
+	// 		const patternParts = pattern.split("/").filter(Boolean);
+	// 		const pathParts = path.split("/").filter(Boolean);
 
-			window.addEventListener("popstate", onLocationChange);
+	// 		// Only attempt parameter parsing if the number of parts match
+	// 		if (patternParts.length === pathParts.length) {
+	// 			patternParts.forEach((part, index) => {
+	// 				if (part.startsWith(":")) {
+	// 					const paramName = part.slice(1);
+	// 					params[paramName] = pathParts[index];
+	// 				}
+	// 			});
+	// 		}
 
-			return () => {
-				window.removeEventListener("popstate", onLocationChange);
-			};
-		}, []);
+	// 		return params;
+	// 	};
 
-		// Sprawdzanie, czy aktualna ścieżka jest dostępna w `routes`
-		const Component = routes[currentPath] || routes["/404"];
-		return Component
-			? MiniFramework.createElement(Component, { key: currentPath })
-			: null;
-	},
+	// 	// Router object with methods
+	// 	const Router = {
+	// 		// Match route and return corresponding component
+	// 		match: (path) => {
+	// 			// Normalize path by removing trailing slashes and ensuring leading slash
+	// 			path = path.replace(/\/+$/, "") || "/";
 
-	// Zaktualizowana `navigate` z bezpośrednim ustawieniem `currentPath`
-	navigate: function (path) {
-		let globalPath = window.location.pathname;
-		if (globalPath !== path) {
-			window.history.pushState({}, "", path);
-			globalPath = path;
-			const popStateEvent = new PopStateEvent("popstate");
-			window.dispatchEvent(popStateEvent); // Wyzwala event popstate
+	// 			// Find the first matching route
+	// 			for (let route in routes) {
+	// 				// Convert route pattern to a regex that handles parameters
+	// 				const routeRegex = new RegExp(
+	// 					`^${route.replace(/:[^/]+/g, "([^/]+)")}$`
+	// 				);
 
-			// Aktualizuje currentPath bez czekania na `popstate`
-			const routerComponent = MiniFramework.currentComponent;
-			if (routerComponent) {
-				routerComponent.setCurrentPath(path);
-			}
-		}
-	},
+	// 				if (routeRegex.test(path)) {
+	// 					currentRoute = route;
+	// 					routeParams = parseRouteParams(route, path);
+	// 					return routes[route];
+	// 				}
+	// 			}
 
-	// Link pozostaje taki sam
-	Link: function ({ to, children }) {
-		const handleClick = (event) => {
-			event.preventDefault(); // Zapobiega domyślnemu przeładowaniu strony
-			MiniFramework.navigate(to); // Wywołuje nawigację
-		};
+	// 			// Fallback to 404 route if no match is found
+	// 			return routes["/404"] || null;
+	// 		},
 
-		return MiniFramework.createElement(
-			"a",
-			{ href: to, onClick: handleClick },
-			children
-		);
-	},
+	// 		// Get current route parameters
+	// 		getParams: () => ({ ...routeParams }),
+
+	// 		// Get current matched route
+	// 		getCurrentRoute: () => currentRoute,
+	// 	};
+
+	// 	// Create a routing component that uses the Router
+	// 	const RouterComponent = () => {
+	// 		const [currentPath, setCurrentPath] = MiniFramework.useState(
+	// 			window.location.pathname
+	// 		);
+
+	// 		MiniFramework.useEffect(() => {
+	// 			const handleLocationChange = () => {
+	// 				const newPath = window.location.pathname;
+	// 				setCurrentPath(newPath);
+	// 			};
+
+	// 			window.addEventListener("popstate", handleLocationChange);
+
+	// 			return () => {
+	// 				window.removeEventListener("popstate", handleLocationChange);
+	// 			};
+	// 		}, []);
+
+	// 		const Component = Router.match(currentPath);
+
+	// 		// Pass route parameters to the matched component
+	// 		return Component
+	// 			? MiniFramework.createElement(Component, {
+	// 					key: currentPath,
+	// 					routeParams: Router.getParams(),
+	// 			  })
+	// 			: null;
+	// 	};
+
+	// 	// Enhanced navigation function
+	// 	const navigate = (path, replace = false) => {
+	// 		// Normalize path
+	// 		path = path.replace(/\/+$/, "") || "/";
+
+	// 		if (replace) {
+	// 			window.history.replaceState({}, "", path);
+	// 		} else {
+	// 			window.history.pushState({}, "", path);
+	// 		}
+
+	// 		// Dispatch popstate to trigger route change
+	// 		window.dispatchEvent(new PopStateEvent("popstate"));
+	// 	};
+
+	// 	// Create a Link component that works with the new router
+	// 	const Link = ({ to, replace = false, children, ...props }) => {
+	// 		const handleClick = (event) => {
+	// 			event.preventDefault();
+	// 			navigate(to, replace);
+	// 		};
+
+	// 		return MiniFramework.createElement(
+	// 			"a",
+	// 			{
+	// 				...props,
+	// 				href: to,
+	// 				onClick: handleClick,
+	// 			},
+	// 			children
+	// 		);
+	// 	};
+
+	// 	return {
+	// 		Router: RouterComponent,
+	// 		navigate,
+	// 		Link,
+	// 		getParams: Router.getParams,
+	// 		getCurrentRoute: Router.getCurrentRoute,
+	// 	};
+	// },
 };
-
-// Klasa bazowa dla komponentów
-class MiniComponent {
-	constructor(props) {
-		this.props = props; // Przypisanie właściwości (props) do instancji komponentu
-		this.state = {}; // Inicjalizacja stanu komponentu jako pustego obiektu
-		this.willInit(); // Wywołanie metody willInit (przed montowaniem komponentu)
-		this.mount(); // Wywołanie metody mount (montowanie komponentu)
-		this.didInit(); // Wywołanie metody didInit (po zamontowaniu komponentu)
-	}
-
-	willInit() {} // Metoda wywoływana przed montowaniem komponentu
-
-	didInit() {} // Metoda wywoływana po zamontowaniu komponentu
-
-	didUpdate() {} // Metoda wywoływana po aktualizacji komponentu
-
-	mainDiv() {
-		this.name = this.constructor.name; // Przypisuje nazwę klasy do zmiennej name
-		return `${this.constructor.name}`; // Zwraca nazwę klasy jako string
-	}
-
-	// Ustawia nowy stan komponentu
-	setState(partialState) {
-		this.state = { ...this.state, ...partialState }; // Aktualizuje stan komponentu
-		MiniFramework.update(this); // Aktualizuje komponent w DOM
-	}
-
-	// Metoda montująca, musi być zaimplementowana przez podklasę
-	mount() {
-		throw new Error("Component subclass must implement mount method."); // Rzuca błąd, jeśli metoda nie została zaimplementowana
-	}
-
-	// Oznacza, że jest to komponent kompatybilny z Reactem
-	static isReactComponent = true;
-}
-
-// Dodanie klasy MiniComponent do MiniFramework jako jego składnik
-MiniFramework.Component = MiniComponent;
 
 export default MiniFramework;

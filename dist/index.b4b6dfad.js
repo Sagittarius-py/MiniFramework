@@ -596,6 +596,7 @@ var _styleCss = require("./style.css");
 },{"./App":"e9Zfo","../Modules/MiniFramework":"j4fYt","./style.css":"bhJkM","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"e9Zfo":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "default", ()=>App);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _image = require("./image");
@@ -612,57 +613,39 @@ var _styledComp = require("./StyledComp");
 var _styledCompDefault = parcelHelpers.interopDefault(_styledComp);
 var _axiosComp = require("./AxiosComp");
 var _axiosCompDefault = parcelHelpers.interopDefault(_axiosComp);
-var _appCss = require("./App.css"); // Importowanie pliku CSS
-exports.default = App = ()=>{
+var _appCss = require("./App.css");
+function App() {
+    // Create context
     const CounterContext = (0, _miniFrameworkDefault.default).createContext(0);
-    const routes = {
-        "/": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "Welcome to Mini.js! Choose a page from the menu."),
-        "/image": (0, _imageDefault.default),
-        "/state1": (0, _state1Default.default),
-        "/state2": (0, _state2Default.default),
-        "/map": (0, _mapCompDefault.default),
-        "/effect": (0, _effectDefault.default),
-        "/styled": (0, _styledCompDefault.default),
-        "/axios": (0, _axiosCompDefault.default),
-        "/404": ()=>(0, _miniFrameworkDefault.default).createElement("div", null, "404 - Page Not Found")
-    };
+    // Define routes
+    // const routes = {
+    // 	"/": () => (
+    // 		<div className="welcome-page">
+    // 			Welcome to Mini.js! Choose a page from the menu.
+    // 		</div>
+    // 	),
+    // 	"/image": ImageComp,
+    // 	"/state1": State1,
+    // 	"/state2": State2,
+    // 	"/map": MapComp,
+    // 	"/effect": Effect,
+    // 	"/styled": StyledComp,
+    // 	"/axios": AxiosComp,
+    // 	"/404": () => <div className="not-found">404 - Page Not Found</div>,
+    // };
+    // Create router
+    // const { Router, Link } = MiniFramework.createRouter(routes);
     return (0, _miniFrameworkDefault.default).createElement(CounterContext.Provider, {
-        count: 10
-    }, (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("header", {
+        value: 10
+    }, (0, _miniFrameworkDefault.default).createElement("div", {
+        className: "app-container"
+    }, (0, _miniFrameworkDefault.default).createElement("header", {
         className: "header"
-    }, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("nav", {
-        className: "nav"
-    }, (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/",
-        className: "nav-link"
-    }, "Home"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/image",
-        className: "nav-link"
-    }, "Image Component"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/state1",
-        className: "nav-link"
-    }, "State 1"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/state2",
-        className: "nav-link"
-    }, "State 2"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/map",
-        className: "nav-link"
-    }, "Map Component"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/effect",
-        className: "nav-link"
-    }, "Effect"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/styled",
-        className: "nav-link"
-    }, "Styled Component"), (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Link, {
-        to: "/axios",
-        className: "nav-link"
-    }, "Axios Component")), (0, _miniFrameworkDefault.default).createElement("div", {
+    }, (0, _miniFrameworkDefault.default).createElement("h1", null, "Welcome to Mini.js")), (0, _miniFrameworkDefault.default).createElement("div", {
         id: "container",
         className: "container"
-    }, (0, _miniFrameworkDefault.default).createElement((0, _miniFrameworkDefault.default).Router, {
-        routes: routes
-    }))));
-};
+    }, (0, _miniFrameworkDefault.default).createElement((0, _imageDefault.default), null), (0, _miniFrameworkDefault.default).createElement((0, _state1Default.default), null), (0, _miniFrameworkDefault.default).createElement((0, _state2Default.default), null), (0, _miniFrameworkDefault.default).createElement((0, _mapCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement((0, _effectDefault.default), null), (0, _miniFrameworkDefault.default).createElement((0, _styledCompDefault.default), null), (0, _miniFrameworkDefault.default).createElement((0, _axiosCompDefault.default), null))));
+}
 
 },{"../Modules/MiniFramework":"j4fYt","./image":"4f6qt","./State1":"2Eq2J","./State2":"kD4lj","./MapComp":"9GO05","./Effect":"eRHMj","./StyledComp":"jOIqo","./AxiosComp":"5w9qH","./App.css":"6n0o6","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j4fYt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -868,44 +851,49 @@ const MiniFramework = {
         MiniFramework.currentComponent = null;
     },
     createContext: function(defaultValue) {
-        const context = {
-            defaultValue,
-            state: defaultValue,
-            subscribers: new Set()
-        };
-        function setContextValue(newValue) {
-            console.log("Setting context value:", newValue); // Dodaj log
-            context.state = newValue;
-            // Wywołaj subskrybentów bezpośrednio
-            context.subscribers.forEach((subscriber)=>{
-                console.log("Notifying subscriber"); // Log subskrybentów
-                subscriber(newValue);
-            });
-        }
-        function Provider({ value, children }) {
-            console.log("Provider value:", value); // Log wartości providera
-            if (value !== undefined) context.state = value;
-            return children;
-        }
-        function useContext() {
-            const [contextValue, setContextValue] = MiniFramework.useState(context.state);
-            MiniFramework.useEffect(()=>{
-                const updateValue = (newValue)=>{
-                    console.log("Updating context value in component:", newValue); // Log aktualizacji
-                    setContextValue(newValue);
-                };
-                context.subscribers.add(updateValue);
-                return ()=>{
-                    context.subscribers.delete(updateValue);
-                };
-            }, []);
-            return contextValue;
-        }
+        let contextState = defaultValue;
+        const subscribers = new Set();
         return {
-            Provider,
-            useContext,
-            setContextValue,
-            getState: ()=>context.state // Dodatkowa metoda do debugowania
+            Provider: function({ value, children }) {
+                // Aktualizacja globalnego stanu kontekstu
+                if (value !== undefined) contextState = value;
+                // Powiadamianie subskrybentów o zmianie
+                subscribers.forEach((subscriber)=>{
+                    try {
+                        subscriber(contextState);
+                    } catch (error) {
+                        console.error("Context subscriber error:", error);
+                    }
+                });
+                return children;
+            },
+            useContext: function() {
+                const [contextValue, setContextValue] = MiniFramework.useState(contextState);
+                // Efekt synchronizujący wartość kontekstu
+                MiniFramework.useEffect(()=>{
+                    const updateHandler = (newValue)=>{
+                        setContextValue(newValue);
+                    };
+                    // Dodanie subskrybenta
+                    subscribers.add(updateHandler);
+                    // Czyszczenie subskrybenta
+                    return ()=>{
+                        subscribers.delete(updateHandler);
+                    };
+                }, []);
+                return contextValue;
+            },
+            // Metoda do bezpośredniej zmiany wartości kontekstu
+            setValue: (newValue)=>{
+                contextState = newValue;
+                subscribers.forEach((subscriber)=>{
+                    try {
+                        subscriber(newValue);
+                    } catch (error) {
+                        console.error("Context update error:", error);
+                    }
+                });
+            }
         };
     },
     useStyle: function(styles) {
@@ -931,86 +919,8 @@ const MiniFramework = {
         // Dodawanie nowego CSS do istniejącego styleTag
         styleTag.appendChild(document.createTextNode(css));
         return className;
-    },
-    Router: function({ routes }) {
-        let globalPath = window.location.pathname;
-        const [currentPath, setCurrentPath] = MiniFramework.useState(globalPath);
-        MiniFramework.useEffect(()=>{
-            const onLocationChange = ()=>{
-                if (globalPath !== window.location.pathname) {
-                    globalPath = window.location.pathname;
-                    setCurrentPath(globalPath); // Aktualizuj `currentPath` bezpośrednio
-                }
-            };
-            window.addEventListener("popstate", onLocationChange);
-            return ()=>{
-                window.removeEventListener("popstate", onLocationChange);
-            };
-        }, []);
-        // Sprawdzanie, czy aktualna ścieżka jest dostępna w `routes`
-        const Component = routes[currentPath] || routes["/404"];
-        return Component ? MiniFramework.createElement(Component, {
-            key: currentPath
-        }) : null;
-    },
-    // Zaktualizowana `navigate` z bezpośrednim ustawieniem `currentPath`
-    navigate: function(path) {
-        let globalPath = window.location.pathname;
-        if (globalPath !== path) {
-            window.history.pushState({}, "", path);
-            globalPath = path;
-            const popStateEvent = new PopStateEvent("popstate");
-            window.dispatchEvent(popStateEvent); // Wyzwala event popstate
-            // Aktualizuje currentPath bez czekania na `popstate`
-            const routerComponent = MiniFramework.currentComponent;
-            if (routerComponent) routerComponent.setCurrentPath(path);
-        }
-    },
-    // Link pozostaje taki sam
-    Link: function({ to, children }) {
-        const handleClick = (event)=>{
-            event.preventDefault(); // Zapobiega domyślnemu przeładowaniu strony
-            MiniFramework.navigate(to); // Wywołuje nawigację
-        };
-        return MiniFramework.createElement("a", {
-            href: to,
-            onClick: handleClick
-        }, children);
     }
 };
-// Klasa bazowa dla komponentów
-class MiniComponent {
-    constructor(props){
-        this.props = props; // Przypisanie właściwości (props) do instancji komponentu
-        this.state = {}; // Inicjalizacja stanu komponentu jako pustego obiektu
-        this.willInit(); // Wywołanie metody willInit (przed montowaniem komponentu)
-        this.mount(); // Wywołanie metody mount (montowanie komponentu)
-        this.didInit(); // Wywołanie metody didInit (po zamontowaniu komponentu)
-    }
-    willInit() {}
-    didInit() {}
-    didUpdate() {}
-    mainDiv() {
-        this.name = this.constructor.name; // Przypisuje nazwę klasy do zmiennej name
-        return `${this.constructor.name}`; // Zwraca nazwę klasy jako string
-    }
-    // Ustawia nowy stan komponentu
-    setState(partialState) {
-        this.state = {
-            ...this.state,
-            ...partialState
-        }; // Aktualizuje stan komponentu
-        MiniFramework.update(this); // Aktualizuje komponent w DOM
-    }
-    // Metoda montująca, musi być zaimplementowana przez podklasę
-    mount() {
-        throw new Error("Component subclass must implement mount method."); // Rzuca błąd, jeśli metoda nie została zaimplementowana
-    }
-    // Oznacza, że jest to komponent kompatybilny z Reactem
-    static isReactComponent = true;
-}
-// Dodanie klasy MiniComponent do MiniFramework jako jego składnik
-MiniFramework.Component = MiniComponent;
 exports.default = MiniFramework;
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
@@ -1146,16 +1056,14 @@ var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
 var _context = require("./Context");
 const State2 = ()=>{
-    const value = (0, _context.CounterContext).useContext();
+    const counter = (0, _context.CounterContext).useContext();
     const increment = ()=>{
-        console.log("Current value before increment:", value); // Log przed inkrementacją
-        const newValue = value + 1;
-        console.log("New value:", newValue); // Log nowej wartości
-        (0, _context.CounterContext).setContextValue(newValue);
+        // Bezpośrednia zmiana wartości kontekstu
+        (0, _context.CounterContext).setValue(counter + 1);
     };
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("button", {
         onClick: increment
-    }, "Zwi\u0119ksz o 1"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 kontekstu w innym komponencie: ", value));
+    }, "Zwi\u0119ksz o 1"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 kontekstu w innym komponencie: ", counter));
 };
 exports.default = State2;
 
@@ -1220,7 +1128,9 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _miniFramework = require("../Modules/MiniFramework");
 var _miniFrameworkDefault = parcelHelpers.interopDefault(_miniFramework);
+var _context = require("./Context");
 const StyledComp = ()=>{
+    const value = (0, _context.CounterContext).useContext();
     const className = (0, _miniFrameworkDefault.default).useStyle({
         backgroundColor: "lightblue",
         padding: "10px",
@@ -1229,11 +1139,11 @@ const StyledComp = ()=>{
     });
     return (0, _miniFrameworkDefault.default).createElement("div", null, (0, _miniFrameworkDefault.default).createElement("div", {
         className: className
-    }, (0, _miniFrameworkDefault.default).createElement("p", null, "This component is styled using CSS-in-JS!")), (0, _miniFrameworkDefault.default).createElement("p", null, "Komponent stylowany za pomoc\u0105 JS-CSS"));
+    }, (0, _miniFrameworkDefault.default).createElement("p", null, "This component is styled using CSS-in-JS!")), (0, _miniFrameworkDefault.default).createElement("p", null, "Komponent stylowany za pomoc\u0105 JS-CSS"), (0, _miniFrameworkDefault.default).createElement("p", null, "Warto\u015B\u0107 contextu w innym komponencie: ", value), " ");
 };
 exports.default = StyledComp;
 
-},{"../Modules/MiniFramework":"j4fYt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5w9qH":[function(require,module,exports) {
+},{"../Modules/MiniFramework":"j4fYt","./Context":"49Q86","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5w9qH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _axios = require("axios");
