@@ -9,6 +9,14 @@ const MiniFramework = {
 
 	// Funkcja do tworzenia elementu
 	createElement: (tag, props, ...children) => {
+		if (!tag) {
+			MiniFramework.errorHandler.log(
+				new Error("Próba utworzenia elementu bez tagu"),
+				"createElement"
+			);
+			return null;
+		}
+
 		if (typeof tag === "function" && !tag.isReactComponent) {
 			// Jeżeli tag jest funkcją i nie jest komponentem klasowym
 			return { tag, props: { ...props, children } };
@@ -32,6 +40,14 @@ const MiniFramework = {
 
 	// Funkcja do renderowania elementu w kontenerze DOM
 	render: function (frameworkEl, container, replace = false) {
+		if (!container || !(container instanceof HTMLElement)) {
+			MiniFramework.errorHandler.log(
+				new Error("Nieprawidłowy kontener renderowania"),
+				"render"
+			);
+			return null;
+		}
+
 		if (frameworkEl && frameworkEl.props?.isPortal) {
 			console.log(typeof frameworkEl.tag);
 			return;
@@ -498,6 +514,32 @@ const MiniFramework = {
 	// 		getCurrentRoute: Router.getCurrentRoute,
 	// 	};
 	// },
+};
+
+MiniFramework.errorHandler = {
+	log: (error, context) => {
+		console.error(`[MiniFramework Error] ${context}:`, error);
+		// Opcjonalnie: wysyłanie błędów do systemu monitorowania
+	},
+
+	// Wrapper dla komponentów, łapiący nieoczekiwane błędy
+	wrapComponent: (Component) => {
+		return function ErrorBoundary(props) {
+			try {
+				return Component(props);
+			} catch (error) {
+				MiniFramework.errorHandler.log(error, `Rendering ${Component.name}`);
+				// Opcjonalnie: renderowanie zapasowego interfejsu użytkownika
+				return MiniFramework.createElement(
+					"div",
+					{
+						style: { color: "red" },
+					},
+					`Error in component: ${Component.name}`
+				);
+			}
+		};
+	},
 };
 
 export default MiniFramework;

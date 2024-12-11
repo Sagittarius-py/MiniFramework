@@ -667,6 +667,10 @@ const MiniFramework = {
     // Mapy WeakMap do przechowywania wartości kontekstów
     // Funkcja do tworzenia elementu
     createElement: (tag, props, ...children)=>{
+        if (!tag) {
+            MiniFramework.errorHandler.log(new Error("Pr\xf3ba utworzenia elementu bez tagu"), "createElement");
+            return null;
+        }
         if (typeof tag === "function" && !tag.isReactComponent) // Jeżeli tag jest funkcją i nie jest komponentem klasowym
         return {
             tag,
@@ -694,6 +698,10 @@ const MiniFramework = {
     },
     // Funkcja do renderowania elementu w kontenerze DOM
     render: function(frameworkEl, container, replace = false) {
+        if (!container || !(container instanceof HTMLElement)) {
+            MiniFramework.errorHandler.log(new Error("Nieprawid\u0142owy kontener renderowania"), "render");
+            return null;
+        }
         if (frameworkEl && frameworkEl.props?.isPortal) {
             console.log(typeof frameworkEl.tag);
             return;
@@ -919,6 +927,28 @@ const MiniFramework = {
         // Dodawanie nowego CSS do istniejącego styleTag
         styleTag.appendChild(document.createTextNode(css));
         return className;
+    }
+};
+MiniFramework.errorHandler = {
+    log: (error, context)=>{
+        console.error(`[MiniFramework Error] ${context}:`, error);
+    // Opcjonalnie: wysyłanie błędów do systemu monitorowania
+    },
+    // Wrapper dla komponentów, łapiący nieoczekiwane błędy
+    wrapComponent: (Component)=>{
+        return function ErrorBoundary(props) {
+            try {
+                return Component(props);
+            } catch (error) {
+                MiniFramework.errorHandler.log(error, `Rendering ${Component.name}`);
+                // Opcjonalnie: renderowanie zapasowego interfejsu użytkownika
+                return MiniFramework.createElement("div", {
+                    style: {
+                        color: "red"
+                    }
+                }, `Error in component: ${Component.name}`);
+            }
+        };
     }
 };
 exports.default = MiniFramework;
